@@ -13,10 +13,16 @@
 #    limitations under the License.
 
 import sys
+import os
 import importlib
 from pathlib import Path
+import requests
 
-NAME = "generic_python3"
+NAME = "generic-python3-comp"
+USER_FILES_PATH = os.getenv("USER_FILES_PATH")
+BE_API_HOST = os.getenv("BE_API_HOST")
+COMP_NAME = os.getenv("COMP_NAME")
+
 sys.path.append(str(Path(__file__).parents[0] / "editables"))
 
 
@@ -31,8 +37,9 @@ def setup(
     print("starting setup")
 
     # import latest input files from pv
+    get_input_files()
 
-    # update python requirements
+    # update python requirements - TODO
 
     # load input files
     importlib.invalidate_caches()
@@ -116,3 +123,25 @@ def compute(
         msg = resp["message"]
 
     return (msg, rdict)
+
+
+### -------------------------------------------------- UTILS
+
+
+def get_input_files():
+
+    headers = {"auth0token": USER_FILES_PATH.split("/")[-2]}
+    files = [x.name for x in Path("editables").glob("*") if x.is_file()]
+
+    for file in files:
+        params = {"file": COMP_NAME + "/inputs/" + file, "content_type": "text/plain"}
+        res = requests.get(
+            f"http://{BE_API_HOST}:4243/be-api/v1/getfiles",
+            headers=headers,
+            params=params,
+        )
+        res.raise_for_status()  # ensure we notice bad responses
+        with open(Path("editables") / file, "w") as f:
+            f.write(res.text)
+
+    print("Completed loading input files.")

@@ -2,14 +2,14 @@ FROM python:3.8
 
 RUN mkdir /app
 COPY protobufs /app/protobufs
-COPY generic_python3_comp/editables /app/generic_python3_comp/editables
-COPY generic_python3_comp/component.py /app/generic_python3_comp/
-COPY generic_python3_comp/component_api.py /app/generic_python3_comp/
-COPY generic_python3_comp/utils.py /app/generic_python3_comp/
-COPY generic_python3_comp/requirements.txt /app/generic_python3_comp/
-COPY generic_python3_comp/README.md /app/generic_python3_comp/
-COPY generic_python3_comp/VERSION /app/generic_python3_comp/
-WORKDIR /app/generic_python3_comp
+COPY generic-python3-comp/editables /app/generic-python3-comp/editables
+COPY generic-python3-comp/component.py /app/generic-python3-comp/
+COPY generic-python3-comp/component_api.py /app/generic-python3-comp/
+COPY generic-python3-comp/requirements.txt /app/generic-python3-comp/
+COPY generic-python3-comp/README.md /app/generic-python3-comp/
+COPY generic-python3-comp/VERSION /app/generic-python3-comp/
+COPY generic-python3-comp/LICENSE /app/generic-python3-comp/
+WORKDIR /app/generic-python3-comp
 
 RUN python -m pip install --upgrade pip
 RUN python -m pip install -r requirements.txt

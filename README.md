@@ -1,4 +1,4 @@
-# GENERIC_PYTHON3_COMP
+# GENERIC-PYTHON3-COMP
 
 Dapta sample component with a generic python 3 interface. 
 
