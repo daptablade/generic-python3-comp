@@ -14,6 +14,7 @@
 
 import sys
 import os
+import subprocess
 import importlib
 from pathlib import Path
 import requests
@@ -21,6 +22,7 @@ import requests
 NAME = "generic-python3-comp"
 USER_FILES_PATH = os.getenv("USER_FILES_PATH")
 BE_API_HOST = os.getenv("BE_API_HOST")
+MYPYPI_HOST = os.getenv("MYPYPI_HOST")
 COMP_NAME = os.getenv("COMP_NAME")
 
 sys.path.append(str(Path(__file__).parents[0] / "editables"))
@@ -37,9 +39,12 @@ def setup(
     print("starting setup")
 
     # import latest input files from pv
-    get_input_files()
+    if BE_API_HOST:
+        get_input_files(ufpath=USER_FILES_PATH, be_api=BE_API_HOST, comp=COMP_NAME)
 
-    # update python requirements - TODO
+    if MYPYPI_HOST:
+        log_text = install("editables/requirements.txt", my_pypi=MYPYPI_HOST)
+        print(log_text)
 
     # load input files
     importlib.invalidate_caches()
@@ -128,20 +133,53 @@ def compute(
 ### -------------------------------------------------- UTILS
 
 
-def get_input_files():
+def get_input_files(ufpath, be_api, comp):
 
-    headers = {"auth0token": USER_FILES_PATH.split("/")[-2]}
-    files = [x.name for x in Path("editables").glob("*") if x.is_file()]
+    headers = {"auth0token": ufpath.split("/")[-2]}
+    files = ["setup.py", "compute.py", "requirements.txt"]
 
     for file in files:
-        params = {"file": COMP_NAME + "/inputs/" + file, "content_type": "text/plain"}
+
+        # check if input file exists
+        params = {"file_name": file, "component_name": comp}
         res = requests.get(
-            f"http://{BE_API_HOST}:4243/be-api/v1/getfiles",
+            f"http://{be_api}/be-api/v1/checkfilesexist",
             headers=headers,
             params=params,
         )
-        res.raise_for_status()  # ensure we notice bad responses
-        with open(Path("editables") / file, "w") as f:
-            f.write(res.text)
+        res.raise_for_status()
+        rdict = res.json()
+
+        if rdict["response"]:
+            # if file exists, then download it from server
+            params = {
+                "file": comp + "/inputs/" + file,
+                "content_type": "text/plain",
+            }
+            res = requests.get(
+                f"http://{be_api}/be-api/v1/getfiles",
+                headers=headers,
+                params=params,
+            )
+            res.raise_for_status()  # ensure we notice bad responses
+            with open(Path("editables") / file, "w") as f:
+                f.write(res.text)
 
     print("Completed loading input files.")
+
+
+def install(requirements_path, my_pypi):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "-i",
+            f"http://{my_pypi}/simple",
+            "-r",
+            requirements_path,
+        ],
+        stdout=subprocess.PIPE,
+    )
+    return result.stdout.decode()

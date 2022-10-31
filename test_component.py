@@ -12,7 +12,10 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import os
+import sys
 import pytest
+import subprocess
 
 from urllib import response
 import grpc
@@ -22,6 +25,17 @@ from google.protobuf import json_format
 import component_api
 from component_pb2 import ComponentRequest
 from component_pb2_grpc import ComponentStub
+
+from pathlib import Path
+from dotenv import load_dotenv
+
+from component import get_input_files, install
+
+load_dotenv()  # read from local .env file
+USER_FILES_PATH = os.getenv("USER_FILES_PATH")
+BE_API_HOST = os.getenv("BE_API_HOST")
+MYPYPI_HOST = os.getenv("MYPYPI_HOST")
+COMP_NAME = os.getenv("COMP_NAME")
 
 SETUP_IN = [
     {
@@ -119,3 +133,16 @@ def test_compute_api(dict_dummy, expected, name="adder"):
     response = client.Compute(request)
     data = json_format.MessageToDict(response.outputs)
     assert data == expected
+
+
+def test_get_input_files():
+    get_input_files(ufpath=USER_FILES_PATH, be_api=BE_API_HOST, comp=COMP_NAME)
+
+
+def test_install():
+    log_text = install("editables/requirements.txt", my_pypi=MYPYPI_HOST)
+    assert "Collecting numpy" in log_text
+    assert "Installing collected packages: numpy" in log_text
+    assert "Successfully installed numpy-" in log_text
+    # cleanup
+    subprocess.run([sys.executable, "-m", "pip", "uninstall", "numpy", "-y"])

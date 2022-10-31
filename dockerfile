@@ -16,4 +16,4 @@ RUN python -m pip install -r requirements.txt
 RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/component.proto
 
 EXPOSE 50060
-ENTRYPOINT [ "python", "component_api.py" ]
+ENTRYPOINT [ "python", "-u", "component_api.py" ]
