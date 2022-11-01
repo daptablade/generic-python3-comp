@@ -1,0 +1,27 @@
+FROM python:3.8
+
+RUN mkdir /app
+COPY protobufs /app/protobufs
+COPY generic-python3-comp/component.py /app/generic-python3-driver/
+COPY generic-python3-comp/component_api.py /app/generic-python3-driver/
+COPY generic-python3-comp/requirements.txt /app/generic-python3-driver/
+COPY generic-python3-comp/README.md /app/generic-python3-driver/
+COPY generic-python3-comp/VERSION /app/generic-python3-driver/
+COPY generic-python3-comp/LICENSE /app/generic-python3-driver/
+
+# driver specific
+COPY generic-python3-comp/driver_editables /app/generic-python3-driver/editables
+COPY generic-python3-comp/component_api2.py /app/generic-python3-driver/
+
+WORKDIR /app/generic-python3-driver
+
+RUN python -m pip install --upgrade pip
+RUN python -m pip install -r requirements.txt
+RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/component.proto
+
+# driver specific
+RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/orchestrator.proto
+ENV ORCHESTRATOR_HOST="orchestrator:50051"
+
+EXPOSE 50060
+ENTRYPOINT [ "python", "-u", "component_api.py" ]

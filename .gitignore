@@ -2,5 +2,5 @@ __*
 venv/
 *.env
 
-component_pb2_grpc.py
-component_pb2.py
+component_pb2*
+orchestrator_pb2*

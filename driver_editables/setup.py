@@ -12,31 +12,18 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-import time
 from datetime import datetime
 
 
-def compute(
-    setup_data: dict = None,
-    params: dict = None,
+def setup(
     inputs: dict = None,
     outputs: dict = None,
     partials: dict = None,
-    options: dict = None,
-    root_folder: str = None,
+    params: dict = None,
 ):
+    """Editable setup function."""
 
-    """Editable compute function."""
+    message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Setup completed."
+    print(message)
 
-    # set inputs
-    x = float(inputs["x"])
-
-    # simulate user function evaluation
-    fx = x + 1
-    time.sleep(1)
-
-    # set outputs
-    outputs = {"fx": fx}
-    message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Adder compute completed."
-
-    return {"message": message, "outputs": outputs}
+    return {"message": message, **params}

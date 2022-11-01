@@ -19,7 +19,7 @@ import importlib
 from pathlib import Path
 import requests
 
-NAME = "generic-python3-comp"
+NAME = "generic-python3-comp|driver"
 USER_FILES_PATH = os.getenv("USER_FILES_PATH")
 BE_API_HOST = os.getenv("BE_API_HOST")
 MYPYPI_HOST = os.getenv("MYPYPI_HOST")
@@ -55,23 +55,33 @@ def setup(
     resp = user_setup.setup(inputs, outputs, partials, params)
 
     # basic checks
-    assert (
-        "inputs" in resp
-        and isinstance(resp["inputs"], dict)
-        and inputs.keys() == resp["inputs"].keys()
-    ), "inputs not returned or keys mutated by setup."
-    assert (
-        "outputs" in resp
-        and isinstance(resp["outputs"], dict)
-        and outputs.keys() == resp["outputs"].keys()
-    ), "outputs not returned or keys mutated by setup."
+    rdict = {}
+    assert isinstance(resp, dict), "User setup returned invalid response."
+    if inputs:
+        assert (
+            "inputs" in resp
+            and isinstance(resp["inputs"], dict)
+            and inputs.keys() == resp["inputs"].keys()
+        ), "inputs not returned or keys mutated by setup."
+        rdict["inputs"] = resp.pop("inputs", None)
+    if outputs:
+        assert (
+            "outputs" in resp
+            and isinstance(resp["outputs"], dict)
+            and outputs.keys() == resp["outputs"].keys()
+        ), "outputs not returned or keys mutated by setup."
+        rdict["outputs"] = resp.pop("outputs", None)
+    if "partials" in resp:
+        assert isinstance(resp["partials"], dict), "partials should be a dictionary."
+        rdict["partials"] = resp.pop("partials", None)
 
     if "message" not in resp:
         msg = ""
     else:
-        msg = resp["message"]
+        msg = resp.pop("message", None)
 
-    rdict = {"inputs": resp["inputs"], "outputs": resp["outputs"]}
+    if resp:  # remaining keys get saved to setup_data accessible in compute
+        rdict.update(resp)
 
     return (msg, rdict)
 
@@ -101,22 +111,26 @@ def compute(
     # basic checks
     rdict = {}
     assert isinstance(resp, dict), "User compute returned invalid response."
-    if "outputs" in resp:
+    if outputs and "outputs" in resp:
         assert (
             isinstance(resp["outputs"], dict)
             and outputs.keys() == resp["outputs"].keys()
         ), "outputs not returned or keys mutated by compute."
         rdict["outputs"] = resp["outputs"]
-    if "partials" in resp:
+    elif "outputs" in resp:
+        rdict["outputs"] = resp["outputs"]
+    if partials and "partials" in resp:
         assert (
             isinstance(resp["partials"], dict)
             and partials.keys() == resp["partials"].keys()
         ), "partials not returned or keys mutated by compute."
         rdict["partials"] = resp["partials"]
+    elif "partials" in resp:
+        rdict["partials"] = resp["partials"]
 
     # check if there are parameter updates
     if any([key not in ["outputs", "partials", "message"] for key in resp]):
-        # insert remaining keys into the setup_data dictionary
+        # update setup_data dictionary for param connections
         for key in resp:
             if key not in ["outputs", "partials", "message"]:
                 assert key in setup_data, f"illegal compute output {key}"
@@ -175,6 +189,8 @@ def install(requirements_path, my_pypi):
             "-m",
             "pip",
             "install",
+            "--trusted-host",
+            my_pypi,
             "-i",
             f"http://{my_pypi}/simple",
             "-r",
