@@ -14,6 +14,7 @@
 
 import sys
 import os
+import shutil
 import subprocess
 import importlib
 from pathlib import Path
@@ -37,10 +38,36 @@ def setup(
 ):
 
     print("starting setup")
+    rdict = {}
+
+    # setup empty outputs folders as required
+    fpath = "editables"  # folder with user rwx permission
+    dirs = []
+    user_input_files = []
+    if "output_directory" in params:
+        output_directory = safename(params["output_directory"])
+        dirs.append(fpath + "/" + output_directory)
+        rdict.update({"outputs_folder_path": fpath + "/" + output_directory})
+    if "user_input_files" in params:
+        if not isinstance(params["user_input_files"], list):
+            raise TypeError("user_input_files should be list of filename.ext strings.")
+        user_input_files = [safename(file) for file in user_input_files]
+        params["inputs_folder_path"] = fpath
+        rdict.update(
+            {"inputs_folder_path": fpath, "user_input_files": user_input_files}
+        )
+
+    # create empty sub-directories for userfiles
+    make_dir(dirs)
 
     # import latest input files from pv
     if BE_API_HOST:
-        get_input_files(ufpath=USER_FILES_PATH, be_api=BE_API_HOST, comp=COMP_NAME)
+        get_input_files(
+            ufpath=USER_FILES_PATH,
+            be_api=BE_API_HOST,
+            comp=COMP_NAME,
+            user_input_files=user_input_files,
+        )
 
     if MYPYPI_HOST:
         log_text = install("editables/requirements.txt", my_pypi=MYPYPI_HOST)
@@ -55,7 +82,6 @@ def setup(
     resp = user_setup.setup(inputs, outputs, partials, params)
 
     # basic checks
-    rdict = {}
     assert isinstance(resp, dict), "User setup returned invalid response."
     if inputs:
         assert (
@@ -141,16 +167,34 @@ def compute(
     else:
         msg = resp["message"]
 
+    # save output files to the user_storage
+    post_ouput_files(
+        ufpath=USER_FILES_PATH,
+        be_api=BE_API_HOST,
+        comp=COMP_NAME,
+        outpath=setup_data["outputs_folder_path"],
+    )
+
     return (msg, rdict)
 
 
 ### -------------------------------------------------- UTILS
 
 
-def get_input_files(ufpath, be_api, comp):
+def make_dir(dirs):
+    for dir in dirs:
+        dir_path = Path(dir)
+        if dir_path.is_dir():
+            shutil.rmtree(dir_path, ignore_errors=True)
+        dir_path.mkdir()
+
+
+def get_input_files(ufpath, be_api, comp, user_input_files):
 
     headers = {"auth0token": ufpath.split("/")[-2]}
     files = ["setup.py", "compute.py", "requirements.txt"]
+    if user_input_files:
+        files.extend(user_input_files)
 
     for file in files:
 
@@ -168,7 +212,7 @@ def get_input_files(ufpath, be_api, comp):
             # if file exists, then download it from server
             params = {
                 "file": comp + "/inputs/" + file,
-                "content_type": "text/plain",
+                "content_type": "application/octet-stream",
             }
             res = requests.get(
                 f"http://{be_api}/be-api/v1/getfiles",
@@ -176,8 +220,10 @@ def get_input_files(ufpath, be_api, comp):
                 params=params,
             )
             res.raise_for_status()  # ensure we notice bad responses
-            with open(Path("editables") / file, "w") as f:
-                f.write(res.text)
+
+            with open(Path("editables") / file, "wb") as fd:
+                for chunk in res.iter_content(chunk_size=128):
+                    fd.write(chunk)
 
     print("Completed loading input files.")
 
@@ -199,3 +245,42 @@ def install(requirements_path, my_pypi):
         stdout=subprocess.PIPE,
     )
     return result.stdout.decode()
+
+
+def safename(file):
+
+    k = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz._-"
+    return "".join(list(filter(lambda x: x in k, str(file))))
+
+
+def post_ouput_files(ufpath, be_api, comp, outpath):
+    headers = {"auth0token": ufpath.split("/")[-2]}
+
+    # list all files in outpath
+    p = Path(outpath).glob("**/*")
+    filepaths = [x for x in p if x.is_file()]
+
+    # post to file server one by one
+    for filepath in filepaths:
+        params = {
+            "file_name": filepath.name,
+            "component_name": comp,
+            "subfolder": "outputs",
+        }
+        with open(filepath, "rb") as f:
+            try:
+                res = requests.post(
+                    f"http://{be_api}/be-api/v1/uploadfile",
+                    headers=headers,
+                    files={"file": ("", f, "application/octet-stream", {})},
+                    data=params,
+                )
+                res.raise_for_status()  # ensure we notice bad responses
+            except Exception as e:
+                raise requests.exceptions.HTTPError(res.text)
+
+        # catch failed file checks on server (e.g. for .py and requirements.txt files)
+        if "filesaved" in res and res["filesaved"] == False:
+            raise ValueError(
+                f"Could not save file {str(filepath)}. Failed checks: {str(res['failed_checks'])}"
+            )

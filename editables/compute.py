@@ -14,6 +14,7 @@
 
 import time
 from datetime import datetime
+from pathlib import Path
 
 
 def compute(
@@ -30,6 +31,20 @@ def compute(
 
     # set inputs
     x = float(inputs["x"])
+
+    # read dummy input files
+    if "user_input_files" in setup_data:
+        user_input_files = setup_data["user_input_files"]
+        inputs_folder = Path(setup_data["inputs_folder_path"])
+        for file in user_input_files:
+            with open(inputs_folder / file, "r") as f:
+                print(f.readlines())
+
+    # save dummy output file
+    if "outputs_folder_path" in setup_data:
+        output_folder = Path(setup_data["outputs_folder_path"])
+        with open(output_folder / "test.out", "w") as f:
+            f.write("This is a test output file.")
 
     # simulate user function evaluation
     fx = x + 1
