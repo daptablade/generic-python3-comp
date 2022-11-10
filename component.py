@@ -51,7 +51,9 @@ def setup(
     if "user_input_files" in params:
         if not isinstance(params["user_input_files"], list):
             raise TypeError("user_input_files should be list of filename.ext strings.")
-        user_input_files = [safename(file["filename"]) for file in user_input_files]
+        user_input_files = [
+            safename(file["filename"]) for file in params["user_input_files"]
+        ]
         params["inputs_folder_path"] = fpath
         rdict.update(
             {"inputs_folder_path": fpath, "user_input_files": user_input_files}
@@ -168,12 +170,13 @@ def compute(
         msg = resp["message"]
 
     # save output files to the user_storage
-    post_ouput_files(
-        ufpath=USER_FILES_PATH,
-        be_api=BE_API_HOST,
-        comp=COMP_NAME,
-        outpath=setup_data["outputs_folder_path"],
-    )
+    if BE_API_HOST:
+        post_ouput_files(
+            ufpath=USER_FILES_PATH,
+            be_api=BE_API_HOST,
+            comp=COMP_NAME,
+            outpath=setup_data["outputs_folder_path"],
+        )
 
     return (msg, rdict)
 
