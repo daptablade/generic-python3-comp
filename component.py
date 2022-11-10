@@ -51,7 +51,7 @@ def setup(
     if "user_input_files" in params:
         if not isinstance(params["user_input_files"], list):
             raise TypeError("user_input_files should be list of filename.ext strings.")
-        user_input_files = [safename(file) for file in user_input_files]
+        user_input_files = [safename(file["filename"]) for file in user_input_files]
         params["inputs_folder_path"] = fpath
         rdict.update(
             {"inputs_folder_path": fpath, "user_input_files": user_input_files}
@@ -210,10 +210,7 @@ def get_input_files(ufpath, be_api, comp, user_input_files):
 
         if rdict["response"]:
             # if file exists, then download it from server
-            params = {
-                "file": comp + "/inputs/" + file,
-                "content_type": "application/octet-stream",
-            }
+            params = {"file": file, "component_name": comp, "subfolder": "inputs"}
             res = requests.get(
                 f"http://{be_api}/be-api/v1/getfiles",
                 headers=headers,
@@ -221,7 +218,7 @@ def get_input_files(ufpath, be_api, comp, user_input_files):
             )
             res.raise_for_status()  # ensure we notice bad responses
 
-            with open(Path("editables") / file, "wb") as fd:
+            with open(Path("editables") / comp / "inputs" / file, "wb") as fd:
                 for chunk in res.iter_content(chunk_size=128):
                     fd.write(chunk)
 

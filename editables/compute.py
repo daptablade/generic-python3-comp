@@ -36,15 +36,18 @@ def compute(
     if "user_input_files" in setup_data:
         user_input_files = setup_data["user_input_files"]
         inputs_folder = Path(setup_data["inputs_folder_path"])
+        output = ""
         for file in user_input_files:
             with open(inputs_folder / file, "r") as f:
-                print(f.readlines())
+                output += file + "\n" + "\n".join(f.readlines()) + "\n"
 
     # save dummy output file
     if "outputs_folder_path" in setup_data:
         output_folder = Path(setup_data["outputs_folder_path"])
         with open(output_folder / "test.out", "w") as f:
-            f.write("This is a test output file.")
+            f.write(output)
+
+    print(output)
 
     # simulate user function evaluation
     fx = x + 1
