@@ -27,6 +27,7 @@ MYPYPI_HOST = os.getenv("MYPYPI_HOST")
 COMP_NAME = os.getenv("COMP_NAME")
 
 sys.path.append(str(Path(__file__).parents[0] / "editables"))
+sys.path.append("/home/non-root/.local/lib/python3.8/site-packages")
 
 
 def setup(
@@ -69,10 +70,14 @@ def setup(
             be_api=BE_API_HOST,
             comp=COMP_NAME,
             user_input_files=user_input_files,
+            inputs_folder_path=fpath,
         )
 
     if MYPYPI_HOST:
         log_text = install("editables/requirements.txt", my_pypi=MYPYPI_HOST)
+        print(log_text)
+    else:
+        log_text = local_install("editables/requirements.txt")
         print(log_text)
 
     # load input files
@@ -192,7 +197,7 @@ def make_dir(dirs):
         dir_path.mkdir()
 
 
-def get_input_files(ufpath, be_api, comp, user_input_files):
+def get_input_files(ufpath, be_api, comp, user_input_files, inputs_folder_path):
 
     headers = {"auth0token": ufpath.split("/")[-2]}
     files = ["setup.py", "compute.py", "requirements.txt"]
@@ -221,9 +226,11 @@ def get_input_files(ufpath, be_api, comp, user_input_files):
             )
             res.raise_for_status()  # ensure we notice bad responses
 
-            with open(Path("editables") / comp / "inputs" / file, "wb") as fd:
+            fpath = Path(inputs_folder_path, file)
+            with open(fpath, "wb") as fd:
                 for chunk in res.iter_content(chunk_size=128):
                     fd.write(chunk)
+            print(f"Saved file: {str(fpath)}")
 
     print("Completed loading input files.")
 
@@ -239,6 +246,21 @@ def install(requirements_path, my_pypi):
             my_pypi,
             "-i",
             f"http://{my_pypi}/simple",
+            "-r",
+            requirements_path,
+        ],
+        stdout=subprocess.PIPE,
+    )
+    return result.stdout.decode()
+
+
+def local_install(requirements_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
             "-r",
             requirements_path,
         ],
