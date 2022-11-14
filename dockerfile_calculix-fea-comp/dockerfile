@@ -1,0 +1,47 @@
+# FROM nvidia/opengl:1.0-glvnd-runtime
+FROM python:3.8
+
+RUN mkdir /app
+COPY protobufs /app/protobufs
+COPY generic-python3-comp/editables/*.py /app/calculix-fea-comp/editables/
+COPY generic-python3-comp/editables/*.txt /app/calculix-fea-comp/editables/
+COPY generic-python3-comp/calculix-fea-comp/calculix.py /app/calculix-fea-comp/
+COPY generic-python3-comp/component.py /app/calculix-fea-comp/
+COPY generic-python3-comp/component_api.py /app/calculix-fea-comp/
+COPY generic-python3-comp/requirements.txt /app/calculix-fea-comp/
+COPY generic-python3-comp/README.md /app/calculix-fea-comp/
+COPY generic-python3-comp/VERSION /app/calculix-fea-comp/
+COPY generic-python3-comp/LICENSE /app/calculix-fea-comp/
+WORKDIR /app/calculix-fea-comp
+
+RUN chmod -R 777 editables
+
+RUN python -m pip install --upgrade pip
+RUN python -m pip install -r requirements.txt
+RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/component.proto
+
+# install cgx and ccx
+RUN  apt-get update && apt-get install -y --no-install-recommends \
+        wget \
+        bzip2 \
+        libglu1 \
+        libxi6 \
+        libxmu6 \
+  && rm -rf /var/lib/apt/lists/*
+RUN wget http://www.dhondt.de/cgx_2.20.bz2
+RUN bunzip2 cgx_2.20.bz2
+RUN mv cgx_2.20 /usr/local/bin/cgx
+RUN chmod ao+rx /usr/local/bin/cgx
+
+## TODO add ccx
+
+# Create the non-root user
+ARG USERNAME=non-root
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+USER $USERNAME
+
+EXPOSE 50060
+ENTRYPOINT [ "python", "-u", "component_api.py" ]
