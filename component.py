@@ -19,6 +19,7 @@ import subprocess
 import importlib
 from pathlib import Path
 import requests
+import traceback
 
 NAME = "generic-python3-comp|driver"
 USER_FILES_PATH = os.getenv("USER_FILES_PATH")
@@ -86,7 +87,11 @@ def setup(
     importlib.reload(user_setup)  # get user updates
 
     # execute setup
-    resp = user_setup.setup(inputs, outputs, partials, params)
+    try:
+        resp = user_setup.setup(inputs, outputs, partials, params)
+    except Exception:
+        t = str(traceback.format_exc())
+        raise ValueError(t)
 
     # basic checks
     assert isinstance(resp, dict), "User setup returned invalid response."
@@ -137,9 +142,13 @@ def compute(
     importlib.reload(user_compute)  # get user updates
 
     # execute compute
-    resp = user_compute.compute(
-        setup_data, params, inputs, outputs, partials, options, root_folder
-    )
+    try:
+        resp = user_compute.compute(
+            setup_data, params, inputs, outputs, partials, options, root_folder
+        )
+    except Exception:
+        t = str(traceback.format_exc())
+        raise ValueError(t)
 
     # basic checks
     rdict = {}
