@@ -44,22 +44,25 @@ def setup(
 
     # setup empty outputs folders as required
     fpath = "editables"  # folder with user rwx permission
+    rdict["inputs_folder_path"] = fpath
+    input_files = ["setup.py", "compute.py", "requirements.txt"]
     dirs = []
     user_input_files = []
     if "output_directory" in params:
         output_directory = safename(params["output_directory"])
         dirs.append(fpath + "/" + output_directory)
-        rdict.update({"outputs_folder_path": fpath + "/" + output_directory})
+        rdict["outputs_folder_path"] = fpath + "/" + output_directory
     if "user_input_files" in params:
         if not isinstance(params["user_input_files"], list):
-            raise TypeError("user_input_files should be list of filename.ext strings.")
+            raise TypeError(
+                "user_input_files should be list of dictionaries, each including a 'filename' key."
+            )
         user_input_files = [
             safename(file["filename"]) for file in params["user_input_files"]
         ]
+        input_files.extend(user_input_files)
         params["inputs_folder_path"] = fpath
-        rdict.update(
-            {"inputs_folder_path": fpath, "user_input_files": user_input_files}
-        )
+        rdict["user_input_files"] = user_input_files
 
     # create empty sub-directories for userfiles
     make_dir(dirs)
@@ -70,7 +73,7 @@ def setup(
             ufpath=USER_FILES_PATH,
             be_api=BE_API_HOST,
             comp=COMP_NAME,
-            user_input_files=user_input_files,
+            input_files=input_files,
             inputs_folder_path=fpath,
         )
 
@@ -95,17 +98,14 @@ def setup(
 
     # basic checks
     assert isinstance(resp, dict), "User setup returned invalid response."
-    if inputs:
+    if inputs and "inputs" in resp:
         assert (
-            "inputs" in resp
-            and isinstance(resp["inputs"], dict)
-            and inputs.keys() == resp["inputs"].keys()
+            isinstance(resp["inputs"], dict) and inputs.keys() == resp["inputs"].keys()
         ), "inputs not returned or keys mutated by setup."
         rdict["inputs"] = resp.pop("inputs", None)
-    if outputs:
+    if outputs and "outputs" in resp:
         assert (
-            "outputs" in resp
-            and isinstance(resp["outputs"], dict)
+            isinstance(resp["outputs"], dict)
             and outputs.keys() == resp["outputs"].keys()
         ), "outputs not returned or keys mutated by setup."
         rdict["outputs"] = resp.pop("outputs", None)
@@ -135,6 +135,11 @@ def compute(
     **kwargs,
 ):
     print("starting compute")
+
+    # import connection input files from other components
+    infolder = setup_data["inputs_folder_path"]
+    get_connection_files(prefix="param_input_files.", infolder=infolder)
+    get_connection_files(prefix="setup_input_files.", infolder=infolder)
 
     # load input files
     importlib.invalidate_caches()
@@ -206,14 +211,11 @@ def make_dir(dirs):
         dir_path.mkdir()
 
 
-def get_input_files(ufpath, be_api, comp, user_input_files, inputs_folder_path):
+def get_input_files(ufpath, be_api, comp, input_files, inputs_folder_path):
 
     headers = {"auth0token": ufpath.split("/")[-2]}
-    files = ["setup.py", "compute.py", "requirements.txt"]
-    if user_input_files:
-        files.extend(user_input_files)
 
-    for file in files:
+    for file in input_files:
 
         # check if input file exists
         params = {"file_name": file, "component_name": comp}
@@ -314,4 +316,31 @@ def post_ouput_files(ufpath, be_api, comp, outpath):
         if "filesaved" in res and res["filesaved"] == False:
             raise ValueError(
                 f"Could not save file {str(filepath)}. Failed checks: {str(res['failed_checks'])}"
+            )
+
+
+def get_connection_files(prefix, infolder, setup_data):
+
+    ks = [k for k in setup_data.keys() if k.startswith(prefix)]
+    if ks:
+        filenames_raw = [setup_data[key] for key in ks]
+        filenames = [safename(file["filename"]) for file in filenames_raw]
+        if not filenames == filenames_raw:
+            raise ValueError(
+                "input_files includes invalid filenames - valid characters are A-Z a-z 0-9 ._- only."
+            )
+        if prefix == "setup_input_files.":
+            # only get files if not already in input folder
+            filenames = [
+                file for file in filenames if not Path(infolder, file).is_file()
+            ]
+
+        # import latest input files from pv
+        if BE_API_HOST and filenames:
+            get_input_files(
+                ufpath=USER_FILES_PATH,
+                be_api=BE_API_HOST,
+                comp=COMP_NAME,
+                input_files=filenames,
+                inputs_folder_path=infolder,
             )
