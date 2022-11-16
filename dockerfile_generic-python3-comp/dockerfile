@@ -3,7 +3,6 @@ FROM python:3.8
 RUN mkdir /app
 COPY protobufs /app/protobufs
 COPY generic-python3-comp/editables/*.py /app/generic-python3-comp/editables/
-COPY generic-python3-comp/editables/*.txt /app/generic-python3-comp/editables/
 COPY generic-python3-comp/component.py /app/generic-python3-comp/
 COPY generic-python3-comp/component_api.py /app/generic-python3-comp/
 COPY generic-python3-comp/requirements.txt /app/generic-python3-comp/

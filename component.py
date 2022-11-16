@@ -138,8 +138,8 @@ def compute(
 
     # import connection input files from other components
     infolder = setup_data["inputs_folder_path"]
-    get_connection_files(prefix="param_input_files.", infolder=infolder)
-    get_connection_files(prefix="setup_input_files.", infolder=infolder)
+    get_connection_files("param_input_files.", infolder, setup_data)
+    get_connection_files("setup_input_files.", infolder, setup_data)
 
     # load input files
     importlib.invalidate_caches()
@@ -324,7 +324,7 @@ def get_connection_files(prefix, infolder, setup_data):
     ks = [k for k in setup_data.keys() if k.startswith(prefix)]
     if ks:
         filenames_raw = [setup_data[key] for key in ks]
-        filenames = [safename(file["filename"]) for file in filenames_raw]
+        filenames = [safename(file) for file in filenames_raw]
         if not filenames == filenames_raw:
             raise ValueError(
                 "input_files includes invalid filenames - valid characters are A-Z a-z 0-9 ._- only."
