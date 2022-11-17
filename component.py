@@ -211,14 +211,16 @@ def make_dir(dirs):
         dir_path.mkdir()
 
 
-def get_input_files(ufpath, be_api, comp, input_files, inputs_folder_path):
+def get_input_files(
+    ufpath, be_api, comp, input_files, inputs_folder_path, subfolder="inputs"
+):
 
     headers = {"auth0token": ufpath.split("/")[-2]}
 
     for file in input_files:
 
         # check if input file exists
-        params = {"file_name": file, "component_name": comp}
+        params = {"file_name": file, "component_name": comp, "subfolder": subfolder}
         res = requests.get(
             f"http://{be_api}/be-api/v1/checkfilesexist",
             headers=headers,
@@ -229,7 +231,7 @@ def get_input_files(ufpath, be_api, comp, input_files, inputs_folder_path):
 
         if rdict["response"]:
             # if file exists, then download it from server
-            params = {"file": file, "component_name": comp, "subfolder": "inputs"}
+            params = {"file": file, "component_name": comp, "subfolder": subfolder}
             res = requests.get(
                 f"http://{be_api}/be-api/v1/getfiles",
                 headers=headers,
@@ -343,4 +345,5 @@ def get_connection_files(prefix, infolder, setup_data):
                 comp=COMP_NAME,
                 input_files=filenames,
                 inputs_folder_path=infolder,
+                subfolder="connections",
             )
