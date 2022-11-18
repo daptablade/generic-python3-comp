@@ -50,8 +50,13 @@ def setup(
     user_input_files = []
     if "output_directory" in params:
         output_directory = safename(params["output_directory"])
-        dirs.append(fpath + "/" + output_directory)
-        rdict["outputs_folder_path"] = fpath + "/" + output_directory
+        p = fpath + "/" + output_directory
+        dirs.append(p)
+        rdict["outputs_folder_path"] = p
+        run_folder = p
+    else:
+        run_folder = None
+
     if "user_input_files" in params:
         if not isinstance(params["user_input_files"], list):
             raise TypeError(
@@ -65,7 +70,8 @@ def setup(
         rdict["user_input_files"] = user_input_files
 
     # create empty sub-directories for userfiles
-    make_dir(dirs)
+    if dirs:
+        make_dir(dirs)
 
     # import latest input files from pv
     if BE_API_HOST:
@@ -96,7 +102,7 @@ def setup(
             outputs,
             partials,
             params,
-            run_folder=rdict["outputs_folder_path"],
+            run_folder=run_folder,
             inputs_folder=fpath,
         )
     except Exception:
@@ -154,14 +160,24 @@ def compute(
     importlib.reload(user_compute)  # get user updates
 
     # generic compute setup
-    run_folder = Path(setup_data["outputs_folder_path"])
+    if "outputs_folder_path" in setup_data:
+        run_folder = Path(setup_data["outputs_folder_path"])
+        if not run_folder.is_dir():
+            raise IsADirectoryError(f"{str(run_folder)} is not a folder.")
+    else:
+        run_folder = None
     inputs_folder = Path(setup_data["inputs_folder_path"])
     user_input_files = setup_data["user_input_files"]
-    if not run_folder.is_dir():
-        raise IsADirectoryError(f"{str(run_folder)} is not a folder.")
+
     for file in user_input_files:
         if not (inputs_folder / file).is_file():
             raise FileNotFoundError(f"{str(inputs_folder / file)} is not a file.")
+
+    # driver specific inputs
+    if "driver" in kwargs and kwargs["driver"] == COMP_NAME:
+        for key in ["workflow", "all_connections"]:
+            if key in kwargs and not key in setup_data:
+                setup_data[key] = kwargs[key]
 
     # execute compute
     try:
@@ -213,12 +229,12 @@ def compute(
         msg = resp["message"]
 
     # save output files to the user_storage
-    if BE_API_HOST:
+    if BE_API_HOST and run_folder:
         post_ouput_files(
             ufpath=USER_FILES_PATH,
             be_api=BE_API_HOST,
             comp=COMP_NAME,
-            outpath=setup_data["outputs_folder_path"],
+            outpath=str(run_folder),
         )
 
     return (msg, rdict)
