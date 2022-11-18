@@ -91,7 +91,14 @@ def setup(
 
     # execute setup
     try:
-        resp = user_setup.setup(inputs, outputs, partials, params)
+        resp = user_setup.setup(
+            inputs,
+            outputs,
+            partials,
+            params,
+            run_folder=rdict["outputs_folder_path"],
+            inputs_folder=fpath,
+        )
     except Exception:
         t = str(traceback.format_exc())
         raise ValueError(t)
