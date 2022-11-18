@@ -33,6 +33,8 @@ COPY generic-python3-comp/requirements.txt /app/calculix-fea-comp/
 COPY generic-python3-comp/README.md /app/calculix-fea-comp/
 COPY generic-python3-comp/VERSION /app/calculix-fea-comp/
 COPY generic-python3-comp/LICENSE /app/calculix-fea-comp/
+
+RUN chmod -R 755 /app
 WORKDIR /app/calculix-fea-comp
 
 RUN chmod -R 777 editables

@@ -14,6 +14,7 @@ COPY generic-python3-comp/driver_editables/*.py /app/generic-python3-driver/edit
 COPY generic-python3-comp/driver_editables/*.txt /app/generic-python3-driver/editables/
 COPY generic-python3-comp/component_api2.py /app/generic-python3-driver/
 
+RUN chmod -R 755 /app
 WORKDIR /app/generic-python3-driver
 
 RUN chmod -R 777 editables

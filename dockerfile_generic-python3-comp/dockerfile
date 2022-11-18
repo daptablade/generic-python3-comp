@@ -9,6 +9,8 @@ COPY generic-python3-comp/requirements.txt /app/generic-python3-comp/
 COPY generic-python3-comp/README.md /app/generic-python3-comp/
 COPY generic-python3-comp/VERSION /app/generic-python3-comp/
 COPY generic-python3-comp/LICENSE /app/generic-python3-comp/
+
+RUN chmod -R 755 /app 
 WORKDIR /app/generic-python3-comp
 
 RUN chmod -R 777 editables

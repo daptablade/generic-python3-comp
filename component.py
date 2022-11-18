@@ -146,10 +146,27 @@ def compute(
     user_compute = importlib.import_module("compute")
     importlib.reload(user_compute)  # get user updates
 
+    # generic compute setup
+    run_folder = Path(setup_data["outputs_folder_path"])
+    inputs_folder = Path(setup_data["inputs_folder_path"])
+    user_input_files = setup_data["user_input_files"]
+    if not run_folder.is_dir():
+        raise IsADirectoryError(f"{str(run_folder)} is not a folder.")
+    for file in user_input_files:
+        if not (inputs_folder / file).is_file():
+            raise FileNotFoundError(f"{str(inputs_folder / file)} is not a file.")
+
     # execute compute
     try:
         resp = user_compute.compute(
-            setup_data, params, inputs, outputs, partials, options, root_folder
+            setup_data,
+            params,
+            inputs,
+            outputs,
+            partials,
+            options,
+            run_folder=run_folder,
+            inputs_folder=inputs_folder,
         )
     except Exception:
         t = str(traceback.format_exc())
