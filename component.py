@@ -50,12 +50,12 @@ def setup(
     user_input_files = []
     if "output_directory" in params:
         output_directory = safename(params["output_directory"])
-        p = fpath + "/" + output_directory
-        dirs.append(p)
-        rdict["outputs_folder_path"] = p
-        run_folder = p
     else:
-        run_folder = None
+        output_directory = "outputs"  # default
+    p = fpath + "/" + output_directory
+    dirs.append(p)
+    rdict["outputs_folder_path"] = p
+    run_folder = p
 
     if "user_input_files" in params:
         if not isinstance(params["user_input_files"], list):
@@ -160,12 +160,9 @@ def compute(
     importlib.reload(user_compute)  # get user updates
 
     # generic compute setup
-    if "outputs_folder_path" in setup_data:
-        run_folder = Path(setup_data["outputs_folder_path"])
-        if not run_folder.is_dir():
-            raise IsADirectoryError(f"{str(run_folder)} is not a folder.")
-    else:
-        run_folder = None
+    run_folder = Path(setup_data["outputs_folder_path"])
+    if not run_folder.is_dir():
+        raise IsADirectoryError(f"{str(run_folder)} is not a folder.")
     inputs_folder = Path(setup_data["inputs_folder_path"])
     user_input_files = setup_data["user_input_files"]
 
