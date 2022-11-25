@@ -227,12 +227,14 @@ def compute(
 
     # save output files to the user_storage
     if BE_API_HOST and run_folder:
-        post_ouput_files(
+        resp = post_ouput_files(
             ufpath=USER_FILES_PATH,
             be_api=BE_API_HOST,
             comp=COMP_NAME,
             outpath=str(run_folder),
         )
+        if "warning" in resp and resp["warning"]:
+            msg += resp["warning"]
 
     return (msg, rdict)
 
@@ -333,6 +335,7 @@ def post_ouput_files(ufpath, be_api, comp, outpath):
     filepaths = [x for x in p if x.is_file()]
 
     # post to file server one by one
+    warning = ""
     for filepath in filepaths:
         params = {
             "file_name": filepath.name,
@@ -356,6 +359,10 @@ def post_ouput_files(ufpath, be_api, comp, outpath):
             raise ValueError(
                 f"Could not save file {str(filepath)}. Failed checks: {str(res['failed_checks'])}"
             )
+        if "warning" in res:
+            warning = res["warning"]
+
+    return {"warning": warning}
 
 
 def get_connection_files(prefix, infolder, setup_data):
