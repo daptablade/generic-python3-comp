@@ -226,15 +226,19 @@ def compute(
         msg = resp["message"]
 
     # save output files to the user_storage
-    if BE_API_HOST and run_folder:
-        resp = post_ouput_files(
-            ufpath=USER_FILES_PATH,
-            be_api=BE_API_HOST,
-            comp=COMP_NAME,
-            outpath=str(run_folder),
-        )
-        if "warning" in resp and resp["warning"]:
-            msg += resp["warning"]
+    try:
+        if BE_API_HOST and run_folder:
+            resp = post_ouput_files(
+                ufpath=USER_FILES_PATH,
+                be_api=BE_API_HOST,
+                comp=COMP_NAME,
+                outpath=str(run_folder),
+            )
+            if "warning" in resp and resp["warning"]:
+                msg += resp["warning"]
+    except Exception:
+        t = str(traceback.format_exc())
+        raise ValueError(t)
 
     return (msg, rdict)
 
@@ -337,6 +341,7 @@ def post_ouput_files(ufpath, be_api, comp, outpath):
     # post to file server one by one
     warning = ""
     for filepath in filepaths:
+        print(f"Uploading file: {filepath.name}")
         params = {
             "file_name": filepath.name,
             "component_name": comp,
@@ -351,6 +356,7 @@ def post_ouput_files(ufpath, be_api, comp, outpath):
                     data=params,
                 )
                 res.raise_for_status()  # ensure we notice bad responses
+                res = res.json()
             except Exception as e:
                 raise requests.exceptions.HTTPError(res.text)
 
@@ -360,6 +366,7 @@ def post_ouput_files(ufpath, be_api, comp, outpath):
                 f"Could not save file {str(filepath)}. Failed checks: {str(res['failed_checks'])}"
             )
         if "warning" in res:
+            print(res)
             warning = res["warning"]
 
     return {"warning": warning}

@@ -1,0 +1,17 @@
+{
+  "components": [
+    {
+      "name": "file-copier",
+      "api": "generic-python3-comp:latest",
+      "options": {},
+      "parameters": {
+        "user_input_files": []
+      }
+    }
+  ],
+  "connections": [],
+  "workflow": {
+    "start": "file-copier",
+    "end": "file-copier"
+  }
+}
