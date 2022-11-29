@@ -48,10 +48,7 @@ def setup(
     input_files = ["setup.py", "compute.py", "requirements.txt"]
     dirs = []
     user_input_files = []
-    if "output_directory" in params:
-        output_directory = safename(params["output_directory"])
-    else:
-        output_directory = "outputs"  # default
+    output_directory = "outputs"  # default
     p = fpath + "/" + output_directory
     dirs.append(p)
     rdict["outputs_folder_path"] = p

@@ -6,7 +6,6 @@
       "options": {},
       "parameters": {
         "x": 0,
-        "output_directory": "outputs",
         "user_input_files": ["test.in"]
       },
       "inputs": {
