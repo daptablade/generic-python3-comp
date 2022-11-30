@@ -129,7 +129,11 @@ def setup(
         msg = resp.pop("message", None)
 
     if resp:  # remaining keys get saved to setup_data accessible in compute
-        rdict.update(resp)
+        for key, val in resp.items():
+            if not key in rdict:  # avoid user overwriting setup data
+                rdict[key] = val
+            else:
+                print(f"Warning - user tried to overwrite setup data key {key}.")
 
     return (msg, rdict)
 
