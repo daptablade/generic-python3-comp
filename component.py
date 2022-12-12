@@ -36,35 +36,31 @@ def setup(
     outputs: dict = None,
     partials: dict = None,
     params: dict = None,
-    **kwargs,
+    options: dict = None,
 ):
 
     print("starting setup")
-    rdict = {}
 
     # setup empty outputs folders as required
     fpath = "editables"  # folder with user rwx permission
-    rdict["inputs_folder_path"] = fpath
+    params["inputs_folder_path"] = fpath
     input_files = ["setup.py", "compute.py", "requirements.txt"]
     dirs = []
     user_input_files = []
     output_directory = "outputs"  # default
     p = fpath + "/" + output_directory
     dirs.append(p)
-    rdict["outputs_folder_path"] = p
-    run_folder = p
+    params["outputs_folder_path"] = p
 
     if "user_input_files" in params:
         if not isinstance(params["user_input_files"], list):
             raise TypeError(
                 "user_input_files should be list of dictionaries, each including a 'filename' key."
             )
-        user_input_files = [
-            safename(file["filename"]) for file in params["user_input_files"]
-        ]
-        input_files.extend(user_input_files)
-        params["inputs_folder_path"] = fpath
-        rdict["user_input_files"] = user_input_files
+        for i, file in enumerate(params["user_input_files"]):
+            filename = safename(file["filename"])
+            params["user_input_files"][i]["filename"] = filename
+            input_files.append(filename)
 
     # create empty sub-directories for userfiles
     if dirs:
@@ -94,30 +90,21 @@ def setup(
 
     # execute setup
     try:
-        resp = user_setup.setup(
-            inputs,
-            outputs,
-            partials,
-            params,
-            run_folder=run_folder,
-            inputs_folder=fpath,
-        )
+        resp = user_setup.setup(inputs, outputs, partials, parameters=params)
     except Exception:
         t = str(traceback.format_exc())
         raise ValueError(t)
 
+    # response dictionary
+    rdict = {}
+
     # basic checks
     assert isinstance(resp, dict), "User setup returned invalid response."
     if inputs and "inputs" in resp:
-        assert (
-            isinstance(resp["inputs"], dict) and inputs.keys() == resp["inputs"].keys()
-        ), "inputs not returned or keys mutated by setup."
+        in_out_check(name="inputs", ref=inputs, new=resp["inputs"])
         rdict["inputs"] = resp.pop("inputs", None)
     if outputs and "outputs" in resp:
-        assert (
-            isinstance(resp["outputs"], dict)
-            and outputs.keys() == resp["outputs"].keys()
-        ), "outputs not returned or keys mutated by setup."
+        in_out_check(name="outputs", ref=outputs, new=resp["outputs"])
         rdict["outputs"] = resp.pop("outputs", None)
     if "partials" in resp:
         assert isinstance(resp["partials"], dict), "partials should be a dictionary."
@@ -130,30 +117,26 @@ def setup(
 
     if resp:  # remaining keys get saved to setup_data accessible in compute
         for key, val in resp.items():
-            if not key in rdict:  # avoid user overwriting setup data
-                rdict[key] = val
+            if not key in params:  # avoid user overwriting setup data
+                params[key] = val
             else:
-                print(f"Warning - user tried to overwrite setup data key {key}.")
+                print(f"Warning - user tried to overwrite parameters data key {key}.")
+    rdict["params"] = params
 
     return (msg, rdict)
 
 
 def compute(
-    setup_data: dict = None,
     params: dict = None,
     inputs: dict = None,
     outputs: dict = None,
     partials: dict = None,
     options: dict = None,
-    root_folder: str = None,
-    **kwargs,
 ):
     print("starting compute")
 
     # import connection input files from other components
-    infolder = setup_data["inputs_folder_path"]
-    get_connection_files("param_input_files.", infolder, setup_data)
-    get_connection_files("setup_input_files.", infolder, setup_data)
+    get_connection_files("input_files.", inputs, infolder=params["inputs_folder_path"])
 
     # load input files
     importlib.invalidate_caches()
@@ -161,33 +144,22 @@ def compute(
     importlib.reload(user_compute)  # get user updates
 
     # generic compute setup
-    run_folder = Path(setup_data["outputs_folder_path"])
+    run_folder = Path(params["outputs_folder_path"])
     if not run_folder.is_dir():
         raise IsADirectoryError(f"{str(run_folder)} is not a folder.")
-    inputs_folder = Path(setup_data["inputs_folder_path"])
-    user_input_files = setup_data["user_input_files"]
+    inputs_folder = Path(params["inputs_folder_path"])
+    user_input_files = params["user_input_files"]
 
     for file in user_input_files:
-        if not (inputs_folder / file).is_file():
-            raise FileNotFoundError(f"{str(inputs_folder / file)} is not a file.")
-
-    # driver specific inputs
-    if "driver" in kwargs and kwargs["driver"] == COMP_NAME:
-        for key in ["workflow", "all_connections"]:
-            if key in kwargs and not key in setup_data:
-                setup_data[key] = kwargs[key]
+        if not (inputs_folder / file["filename"]).is_file():
+            raise FileNotFoundError(
+                f"{str(inputs_folder / file['filename'])} is not a file."
+            )
 
     # execute compute
     try:
         resp = user_compute.compute(
-            setup_data,
-            params,
-            inputs,
-            outputs,
-            partials,
-            options,
-            run_folder=run_folder,
-            inputs_folder=inputs_folder,
+            inputs, outputs, partials, options, parameters=params
         )
     except Exception:
         t = str(traceback.format_exc())
@@ -196,35 +168,23 @@ def compute(
     # basic checks
     rdict = {}
     assert isinstance(resp, dict), "User compute returned invalid response."
-    if outputs and "outputs" in resp:
-        assert (
-            isinstance(resp["outputs"], dict)
-            and outputs.keys() == resp["outputs"].keys()
-        ), "outputs not returned or keys mutated by compute."
-        rdict["outputs"] = resp["outputs"]
-    elif "outputs" in resp:
-        rdict["outputs"] = resp["outputs"]
-    if partials and "partials" in resp:
+    if "outputs" in resp:
+        in_out_check(name="outputs", ref=outputs, new=resp["outputs"])
+        rdict["outputs"] = resp.pop("outputs", None)
+    if "partials" in resp:
         assert (
             isinstance(resp["partials"], dict)
             and partials.keys() == resp["partials"].keys()
         ), "partials not returned or keys mutated by compute."
-        rdict["partials"] = resp["partials"]
-    elif "partials" in resp:
-        rdict["partials"] = resp["partials"]
-
-    # check if there are parameter updates
-    if any([key not in ["outputs", "partials", "message"] for key in resp]):
-        # update setup_data dictionary for param connections
-        for key in resp:
-            if key not in ["outputs", "partials", "message"]:
-                assert key in setup_data, f"illegal compute output {key}"
-                rdict[key] = resp[key]
-
+        rdict["partials"] = resp.pop("partials", None)
     if "message" not in resp:
         msg = ""
     else:
-        msg = resp["message"]
+        msg = resp.pop("message", None)
+
+    # nothing should be left
+    if resp:
+        raise ValueError(f"illegal compute outputs {resp.keys()}")
 
     # save output files to the user_storage
     try:
@@ -245,6 +205,20 @@ def compute(
 
 
 ### -------------------------------------------------- UTILS
+
+
+def in_out_check(name, ref, new):
+    if not isinstance(new, dict):
+        raise TypeError(f"{name} has been mutated - should be a dictionary.")
+    if not ref.keys() == new.keys():
+        raise ValueError(f"{name} keys mutated.")
+    for key in ref.keys():
+        if not isinstance(new[key], dict):
+            raise TypeError(
+                f"{name}['{key}'] has been mutated - should be a dictionary."
+            )
+        if not ref[key].keys() == new[key].keys():
+            raise ValueError(f"{name}['{key}'] keys mutated.")
 
 
 def make_dir(dirs):
@@ -373,29 +347,31 @@ def post_ouput_files(ufpath, be_api, comp, outpath):
     return {"warning": warning}
 
 
-def get_connection_files(prefix, infolder, setup_data):
+def get_connection_files(prefix, inputs, infolder):
 
-    ks = [k for k in setup_data.keys() if k.startswith(prefix)]
-    if ks:
-        filenames_raw = [setup_data[key] for key in ks]
-        filenames = [safename(file) for file in filenames_raw]
-        if not filenames == filenames_raw:
-            raise ValueError(
-                "input_files includes invalid filenames - valid characters are A-Z a-z 0-9 ._- only."
-            )
-        if prefix == "setup_input_files.":
-            # only get files if not already in input folder
-            filenames = [
-                file for file in filenames if not Path(infolder, file).is_file()
-            ]
+    for subtype in ["implicit", "setup"]:
+        data = inputs[subtype]
+        ks = [k for k in data.keys() if k.startswith(prefix)]
+        if ks:
+            filenames_raw = [data[key] for key in ks]
+            filenames = [safename(file) for file in filenames_raw]
+            if not filenames == filenames_raw:
+                raise ValueError(
+                    "input_files includes invalid filenames - valid characters are A-Z a-z 0-9 ._- only."
+                )
+            if subtype == "setup":
+                # only get files if not already in input folder
+                filenames = [
+                    file for file in filenames if not Path(infolder, file).is_file()
+                ]
 
-        # import latest input files from pv
-        if BE_API_HOST and filenames:
-            get_input_files(
-                ufpath=USER_FILES_PATH,
-                be_api=BE_API_HOST,
-                comp=COMP_NAME,
-                input_files=filenames,
-                inputs_folder_path=infolder,
-                subfolder="connections",
-            )
+            # import latest input files from pv
+            if BE_API_HOST and filenames:
+                get_input_files(
+                    ufpath=USER_FILES_PATH,
+                    be_api=BE_API_HOST,
+                    comp=COMP_NAME,
+                    input_files=filenames,
+                    inputs_folder_path=infolder,
+                    subfolder="connections",
+                )
