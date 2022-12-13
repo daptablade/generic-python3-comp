@@ -136,7 +136,7 @@ def compute(
     print("starting compute")
 
     # import connection input files from other components
-    get_connection_files("input_files.", inputs, infolder=params["inputs_folder_path"])
+    get_connection_files("files.", inputs, infolder=params["inputs_folder_path"])
 
     # load input files
     importlib.invalidate_caches()
