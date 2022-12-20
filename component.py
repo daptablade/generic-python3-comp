@@ -90,7 +90,7 @@ def setup(
 
     # execute setup
     try:
-        resp = user_setup.setup(inputs, outputs, partials, parameters=params)
+        resp = user_setup.setup(inputs, outputs, parameters=params)
     except Exception:
         t = str(traceback.format_exc())
         raise ValueError(t)
@@ -99,7 +99,8 @@ def setup(
     rdict = {}
 
     # basic checks
-    assert isinstance(resp, dict), "User setup returned invalid response."
+    if not isinstance(resp, dict):
+        raise ValueError("User setup returned invalid response.")
     if inputs and "inputs" in resp:
         in_out_check(name="inputs", ref=inputs, new=resp["inputs"])
         rdict["inputs"] = resp.pop("inputs", None)
@@ -107,7 +108,8 @@ def setup(
         in_out_check(name="outputs", ref=outputs, new=resp["outputs"])
         rdict["outputs"] = resp.pop("outputs", None)
     if "partials" in resp:
-        assert isinstance(resp["partials"], dict), "partials should be a dictionary."
+        if not isinstance(resp["partials"], dict):
+            raise ValueError("partials should be a dictionary.")
         rdict["partials"] = resp.pop("partials", None)
 
     if "message" not in resp:
@@ -115,13 +117,20 @@ def setup(
     else:
         msg = resp.pop("message", None)
 
-    if resp:  # remaining keys get saved to setup_data accessible in compute
-        for key, val in resp.items():
+    if "parameters" in resp:
+        if not isinstance(resp["parameters"], dict):
+            raise ValueError("parameters should be a dictionary.")
+        for key, val in resp["parameters"].items():
             if not key in params:  # avoid user overwriting setup data
                 params[key] = val
             else:
                 print(f"Warning - user tried to overwrite parameters data key {key}.")
+        resp.pop("parameters", None)
     rdict["params"] = params
+
+    # nothing should be left
+    if resp:
+        raise ValueError(f"illegal setup outputs {resp.keys()}")
 
     return (msg, rdict)
 
