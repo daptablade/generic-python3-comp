@@ -1,61 +1,61 @@
-#    Copyright 2022 Dapta LTD
-
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at
-
-#        http://www.apache.org/licenses/LICENSE-2.0
-
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#    See the License for the specific language governing permissions and
-#    limitations under the License.
-
-import time
 from datetime import datetime
 from pathlib import Path
-import numpy as np
+import shutil
 
 
 def compute(
-    setup_data: dict = None,
-    params: dict = None,
-    inputs: dict = None,
-    outputs: dict = None,
-    partials: dict = None,
-    options: dict = None,
-    root_folder: str = None,
-):
+    inputs: dict = {"design": {}, "implicit": {}, "setup": {}},
+    outputs: dict = {"design": {}, "implicit": {}, "setup": {}},
+    partials: dict = {},
+    options: dict = {},
+    parameters: dict = {
+        "user_input_files": [],
+        "inputs_folder_path": "",
+        "outputs_folder_path": "",
+    },
+) -> dict:
+    """A user editable compute function.
 
-    """Editable compute function."""
+    Here the compute function copies input files to the output folder.
 
-    # set inputs
-    x = float(inputs["x"])
+    Parameters
+    ----------
+    inputs: dict
+        The component Inputs sorted by type (design, implicit or setup).
+    outputs: dict
+        The component Outputs sorted by type (design, implicit or setup).
+    partials: dict, optional
+        The derivatives of the component's "design" outputs with respect to its
+        "design" inputs, used for gradient-based design optimisation Runs.
+    options: dict, optional
+        component data processing options and flags, inc. : "stream_call",
+        "get_outputs", "get_grads"
+    parameters: dict
+        The component Parameters as returned by the setup function.
 
-    # read dummy input files
-    if "user_input_files" in setup_data:
-        user_input_files = setup_data["user_input_files"]
-        inputs_folder = Path(setup_data["inputs_folder_path"])
-        output = ""
-        for file in user_input_files:
-            with open(inputs_folder / file, "r") as f:
-                output += file + "\n" + "\n".join(f.readlines()) + "\n"
+    Returns
+    -------
+    dict
+        dictionary of JSON-serialisable keys and values, including:
+        outputs: dict, optional
+            The compute function can assign values to output keys, but the outputs
+            keys should not be modified.
+        partials: dict, optional
+            The compute function can assign values to partials keys, but the
+            partials keys should not be modified.
+        message: str, optional
+            A compute message that will appear in the Run log.
+    """
 
-    # save dummy output file
-    if "outputs_folder_path" in setup_data:
-        output_folder = Path(setup_data["outputs_folder_path"])
-        with open(output_folder / "test.out", "w") as f:
-            f.write(output)
+    print("Starting user function evaluation.")
 
-    print(output)
+    inputs_folder = Path(parameters["inputs_folder_path"])
+    run_folder = Path(parameters["outputs_folder_path"])
+    for file in parameters["user_input_files"]:
+        src = inputs_folder / file
+        shutil.copy(src, run_folder / (src.stem + "_out" + src.suffix))
 
-    # simulate user function evaluation
-    fx = x + 1
-    time.sleep(1)
+    message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Copied files."
+    print(message)
 
-    # set outputs
-    outputs = {"fx": fx}
-    message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Adder compute completed."
-
-    return {"message": message, "outputs": outputs}
+    return {"message": message}

@@ -1,4 +1,4 @@
-#    Copyright 2022 Dapta LTD
+#    Copyright 2023 Dapta LTD
 
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ from google.protobuf import json_format
 from component_pb2 import ComponentResponse, ComponentLargeMessage
 import component_pb2_grpc
 
-from component import setup, compute, NAME
+from component import setup, compute, COMP_NAME
 
 PORT = 50060
 
@@ -88,10 +88,10 @@ def serve(service):
     server.start()
 
     def handle_sigterm(*_):
-        print(f"Component {NAME} received shutdown signal")
+        print(f"Component {COMP_NAME} received shutdown signal")
         all_rpcs_done_event = server.stop(30)
         all_rpcs_done_event.wait(30)
-        print(f"Component {NAME} shut down gracefully")
+        print(f"Component {COMP_NAME} shut down gracefully")
 
     signal(SIGTERM, handle_sigterm)
 

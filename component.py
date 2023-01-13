@@ -1,4 +1,4 @@
-#    Copyright 2022 Dapta LTD
+#    Copyright 2023 Dapta LTD
 
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ from pathlib import Path
 import requests
 import traceback
 
-NAME = "generic-python3-comp|driver"
 USER_FILES_PATH = os.getenv("USER_FILES_PATH")
 BE_API_HOST = os.getenv("BE_API_HOST")
 MYPYPI_HOST = os.getenv("MYPYPI_HOST")
