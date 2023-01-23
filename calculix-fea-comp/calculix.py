@@ -11,10 +11,10 @@ def execute_cgx(infile: Path, run_folder: Path):
             LOCAL_EXECUTES["CGX"] + " -bg " + str(infile),
             cwd=run_folder,
             shell=True,
-            check=True,
+            check=False,
             capture_output=True,
         )
-        return resp.stdout.decode("ascii")
+        return {"stdout": resp.stdout.decode("ascii"), "returncode": resp.returncode}
     else:
         raise ValueError("Need to specify an execution path for Calculix GraphiX.")
 
@@ -27,9 +27,9 @@ def execute_fea(infile: Path, run_folder: Path):
             LOCAL_EXECUTES["CCX"] + " " + str(infile),
             cwd=run_folder,
             shell=True,
-            check=True,
+            check=False,
             capture_output=True,
         )
-        return resp.stdout.decode("ascii")
+        return {"stdout": resp.stdout.decode("ascii"), "returncode": resp.returncode}
     else:
         raise ValueError("Need to specify an execution path for Calculix CrunchiX.")
