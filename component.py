@@ -92,6 +92,16 @@ def setup(
         resp = user_setup.setup(inputs, outputs, parameters=params)
     except Exception:
         t = str(traceback.format_exc())
+        # save setup output files to the user_storage in case of error
+        if BE_API_HOST and p:
+            resp = post_ouput_files(
+                ufpath=USER_FILES_PATH,
+                be_api=BE_API_HOST,
+                comp=COMP_NAME,
+                outpath=str(p),
+            )
+            if "warning" in resp and resp["warning"]:
+                t += "\n" + resp["warning"]
         raise ValueError(t)
 
     # response dictionary
@@ -130,6 +140,21 @@ def setup(
     # nothing should be left
     if resp:
         raise ValueError(f"illegal setup outputs {resp.keys()}")
+
+    # save setup output files to the user_storage
+    try:
+        if BE_API_HOST and p:
+            resp = post_ouput_files(
+                ufpath=USER_FILES_PATH,
+                be_api=BE_API_HOST,
+                comp=COMP_NAME,
+                outpath=str(p),
+            )
+            if "warning" in resp and resp["warning"]:
+                msg += resp["warning"]
+    except Exception:
+        t = str(traceback.format_exc())
+        raise ValueError(t)
 
     return (msg, rdict)
 
@@ -171,6 +196,16 @@ def compute(
         )
     except Exception:
         t = str(traceback.format_exc())
+        # save output files to the user_storage in case of error
+        if BE_API_HOST and run_folder:
+            resp = post_ouput_files(
+                ufpath=USER_FILES_PATH,
+                be_api=BE_API_HOST,
+                comp=COMP_NAME,
+                outpath=str(run_folder),
+            )
+            if "warning" in resp and resp["warning"]:
+                t += "\n" + resp["warning"]
         raise ValueError(t)
 
     # basic checks
