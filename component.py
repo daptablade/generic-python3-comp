@@ -20,14 +20,22 @@ import importlib
 from pathlib import Path
 import requests
 import traceback
+from dotenv import load_dotenv
 
-USER_FILES_PATH = os.getenv("USER_FILES_PATH")
-BE_API_HOST = os.getenv("BE_API_HOST")
-MYPYPI_HOST = os.getenv("MYPYPI_HOST")
-COMP_NAME = os.getenv("COMP_NAME")
+# load component specific environment variables
+if Path(".env").is_file():
+    load_dotenv()
+EDITABLES_PATH = str(Path(__file__).parents[0] / "editables")
+USER_FILES_PATH = os.getenv("USER_FILES_PATH", EDITABLES_PATH)
+BE_API_HOST = os.getenv("BE_API_HOST", None)
+MYPYPI_HOST = os.getenv("MYPYPI_HOST", None)
+COMP_NAME = os.getenv("COMP_NAME", "component")
+PYTHON_LIB = os.getenv(
+    "PYTHON_LIB", "/home/non-root/.local/lib/python3.8/site-packages"
+)
 
-sys.path.append(str(Path(__file__).parents[0] / "editables"))
-sys.path.append("/home/non-root/.local/lib/python3.8/site-packages")
+sys.path.append(EDITABLES_PATH)
+sys.path.append(PYTHON_LIB)
 
 
 def setup(
@@ -168,8 +176,9 @@ def compute(
 ):
     print("starting compute")
 
-    # import connection input files from other components
-    get_connection_files("files.", inputs, infolder=params["inputs_folder_path"])
+    if BE_API_HOST:
+        # import connection input files from other components
+        get_connection_files("files.", inputs, infolder=params["inputs_folder_path"])
 
     # load input files
     importlib.invalidate_caches()
@@ -418,3 +427,9 @@ def get_connection_files(prefix, inputs, infolder):
                     inputs_folder_path=infolder,
                     subfolder="connections",
                 )
+
+
+if __name__ == "__main__":
+    (msg, rdict) = setup(inputs={}, outputs={}, partials={}, params={}, options={})
+    rdict["params"]["user_input_files"] = []
+    compute(inputs={}, outputs={}, partials={}, params=rdict["params"], options={})

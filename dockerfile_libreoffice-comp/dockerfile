@@ -1,0 +1,46 @@
+FROM openjdk:8-jre-slim
+
+RUN apt-get update && apt-get -y install \
+  libreoffice-common \ 
+  unoconv \
+  python3-pip \
+  nano
+RUN  rm -rf /var/lib/apt/lists/*
+  
+### install python API
+RUN mkdir /app
+COPY protobufs /app/protobufs
+COPY generic-python3-comp/libreoffice-comp/editables/*.py /app/libreoffice-comp/editables/
+COPY generic-python3-comp/libreoffice-comp/libreoffice.py /app/libreoffice-comp/
+COPY generic-python3-comp/libreoffice-comp/.env /app/libreoffice-comp/
+COPY generic-python3-comp/component.py /app/libreoffice-comp/
+COPY generic-python3-comp/component_api.py /app/libreoffice-comp/
+COPY generic-python3-comp/requirements.txt /app/libreoffice-comp/
+COPY generic-python3-comp/README.md /app/libreoffice-comp/
+COPY generic-python3-comp/VERSION /app/libreoffice-comp/
+COPY generic-python3-comp/LICENSE /app/libreoffice-comp/
+
+RUN chmod -R 755 /app 
+WORKDIR /app/libreoffice-comp
+
+RUN chmod -R 777 editables
+
+RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install -r requirements.txt
+RUN python3 -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/component.proto
+
+# Create the non-root user
+ARG USERNAME=non-root
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+USER $USERNAME
+
+# ## for local testing accessing the spreadsheet gui
+# ## use `docker run -ti --rm -e DISPLAY=host.docker.internal:0.0 --name=libreoffice-comp libreoffice-comp` to access gui
+# CMD /usr/bin/libreoffice --calc --accept="socket,host=0.0.0.0,port=8100;urp;"
+
+EXPOSE 50060
+EXPOSE 8100
+ENTRYPOINT [ "python3", "-u", "component_api.py" ]
