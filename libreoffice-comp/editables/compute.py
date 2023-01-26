@@ -1,7 +1,8 @@
 from datetime import datetime
 from pathlib import Path
 
-from libreoffice import get_model, PythonVersion, store
+import uno
+from libreoffice import store, open_file
 
 
 def compute(
@@ -53,19 +54,61 @@ def compute(
     inputs_folder = Path(parameters["inputs_folder_path"])
     run_folder = Path(parameters["outputs_folder_path"])
 
-    # get libreoffice instance
-    model = get_model()
+    # open saved spreadsheet
+    model = open_file(path=parameters["ods_file"])
 
-    # Trigger our job
-    model = PythonVersion(model)
+    # add data and plot
+    if not inputs["design"]:
+        inputs["design"] = {"x": [0, 1, 2], "y": [1, 2, 3], "f(x,y)": [1, 3, 5]}
+    model = set_values(model, inputs["design"])
 
     # save spreadsheet
-    now = datetime.now()
-    full_path = run_folder.resolve()
-    file = str(full_path / ("calc_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".ods"))
-    store(model, file)
+    store(model, parameters["ods_file"])
 
-    message = f"{now.strftime('%Y%m%d-%H%M%S')}: Saved ODS spreadsheet."
+    message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Saved ODS spreadsheet."
     print(message)
 
     return {"message": message}
+
+
+def set_values(model, data):
+    sheet = model.Sheets.getByIndex(0)
+    jj = 0
+    for title, value in data.items():
+        while True:
+            if title == sheet[0, jj].String:
+                break
+            else:
+                jj += 1
+        for ii, val in enumerate(value):
+            sheet[ii + 1, jj].Value = val
+
+    range_address = sheet.getCellRangeByPosition(
+        0, 0, len(data) - 1, ii + 1
+    ).getRangeAddress()
+
+    plot_data(sheet, name="data", range_address=range_address)
+
+    return model
+
+
+def plot_data(sheet, name, range_address):
+
+    rect = uno.createUnoStruct("com.sun.star.awt.Rectangle")
+    rect.Width, rect.Height, rect.X, rect.Y = 22000, 12000, 1000, 9200
+
+    oCharts = sheet.getCharts()
+
+    # first bool: ColumnHeaders
+    # second bool: RowHeaders
+    oCharts.addNewByName(name, rect, (range_address,), True, False)
+    chart = oCharts.getByName(name).getEmbeddedObject()
+    chart.createInstance("com.sun.star.chart.LineDiagram")
+
+    chart.HasMainTitle = True
+    chart.HasLegend = True
+    chart.Title.String = name
+    chart.Title.CharHeight = 24
+    chart.HasSubTitle = False
+
+    diagram = chart.getDiagram()

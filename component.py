@@ -430,6 +430,12 @@ def get_connection_files(prefix, inputs, infolder):
 
 
 if __name__ == "__main__":
-    (msg, rdict) = setup(inputs={}, outputs={}, partials={}, params={}, options={})
+    inputs = {"design": {}, "implicit": {}, "setup": {}}
+    outputs = {"design": {}, "implicit": {}, "setup": {}}
+    (msg, rdict) = setup(
+        inputs=inputs, outputs=outputs, partials={}, params={}, options={}
+    )
     rdict["params"]["user_input_files"] = []
-    compute(inputs={}, outputs={}, partials={}, params=rdict["params"], options={})
+    compute(
+        inputs=inputs, outputs=outputs, partials={}, params=rdict["params"], options={}
+    )

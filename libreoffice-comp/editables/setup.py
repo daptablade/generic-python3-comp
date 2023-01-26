@@ -1,4 +1,8 @@
 from datetime import datetime
+from pathlib import Path
+
+from libreoffice import get_model, store
+from com.sun.star.awt.FontWeight import BOLD, NORMAL
 
 
 def setup(
@@ -45,11 +49,35 @@ def setup(
             A setup message that will appear in the Run log.
     """
 
-    # initalise setup_data keys
-    response = {}
+    run_folder = Path(parameters["outputs_folder_path"])
+
+    # start libreoffice and get a blank spreadsheet
+    model = get_model()
+
+    # add data titles
+    if not "column_names" in parameters:
+        parameters["column_names"] = ["x", "y", "f(x,y)"]
+    model = set_column_titles(model, parameters["column_names"])
+
+    # save spreadsheet
+    now = datetime.now()
+    full_path = run_folder.resolve()
+    file = str(full_path / ("calc_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".ods"))
+    store(model, file)
+    # add filepath to the parameters
+    parameters["ods_file"] = file
 
     message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Setup completed."
     print(message)
-    response["message"] = message
 
-    return response
+    return {"message": message, "parameters": parameters}
+
+
+def set_column_titles(model, titles):
+    sheet = model.Sheets.getByIndex(0)
+    cells = sheet[0, :]
+    cells.setPropertyValue("CharWeight", BOLD)
+
+    for ii, title in enumerate(titles):
+        sheet[0, ii].String = title
+    return model

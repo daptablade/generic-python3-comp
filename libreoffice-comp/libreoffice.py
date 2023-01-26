@@ -37,10 +37,14 @@ def PythonVersion(model):
 
 def store(model, file=None):
     # store the document
-    properties = []
-    p = PropertyValue()
-    properties.append(p)
-    model.storeAsURL(f"file:{file}", tuple(properties))
+    path = uno.systemPathToFileUrl(file)
+    try:
+        model.storeAsURL(path, ())
+    except Exception:
+        properties = []
+        p = PropertyValue()
+        properties.append(p)
+        model.storeToURL(path, tuple(properties))
     return None
 
 
@@ -49,7 +53,20 @@ def get_model():
     os.system(
         '/usr/bin/libreoffice --headless --nologo --nofirststartwizard --accept="socket,host=0.0.0.0,port=8100;urp" &'
     )
+    desktop = get_desktop()
+    # create blank spreadsheet
+    model = desktop.loadComponentFromURL("private:factory/scalc", "_blank", 0, ())
+    return model
 
+
+def open_file(path):
+    desktop = get_desktop()
+    # load spreadsheet
+    model = desktop.getCurrentComponent()
+    return model
+
+
+def get_desktop():
     # Get local context info
     localContext = uno.getComponentContext()
     resolver = localContext.ServiceManager.createInstanceWithContext(
@@ -69,10 +86,7 @@ def get_model():
 
     # get the central desktop object
     desktop = smgr.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
-
-    # create blank spreadsheet
-    model = desktop.loadComponentFromURL("private:factory/scalc", "_blank", 0, ())
-    return model
+    return desktop
 
 
 if __name__ == "__main__":

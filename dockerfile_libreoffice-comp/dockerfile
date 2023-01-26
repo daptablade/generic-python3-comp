@@ -12,7 +12,7 @@ RUN mkdir /app
 COPY protobufs /app/protobufs
 COPY generic-python3-comp/libreoffice-comp/editables/*.py /app/libreoffice-comp/editables/
 COPY generic-python3-comp/libreoffice-comp/libreoffice.py /app/libreoffice-comp/
-COPY generic-python3-comp/libreoffice-comp/.env /app/libreoffice-comp/
+COPY generic-python3-comp/libreoffice-comp/,env /app/libreoffice-comp/.env
 COPY generic-python3-comp/component.py /app/libreoffice-comp/
 COPY generic-python3-comp/component_api.py /app/libreoffice-comp/
 COPY generic-python3-comp/requirements.txt /app/libreoffice-comp/
