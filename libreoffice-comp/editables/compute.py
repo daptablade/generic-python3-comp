@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 import uno
-from libreoffice import store, get_current_file
+from libreoffice import store, get_current_file, open_file
 
 
 def compute(
@@ -51,11 +51,8 @@ def compute(
 
     print("Starting user function evaluation.")
 
-    inputs_folder = Path(parameters["inputs_folder_path"])
-    run_folder = Path(parameters["outputs_folder_path"])
-
     # open saved spreadsheet
-    model = get_current_file()
+    model = open_file(path=parameters["ods_file"])
 
     # add data and plot
     if not inputs["design"]:
@@ -67,6 +64,8 @@ def compute(
 
     message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Saved ODS spreadsheet."
     print(message)
+
+    model.close(True)
 
     return {"message": message}
 

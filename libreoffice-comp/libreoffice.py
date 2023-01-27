@@ -39,31 +39,28 @@ def store(model, file=None):
     # store the document
     path = uno.systemPathToFileUrl(file)
     try:
-        model.storeAsURL(path, ())
+        model.store()
     except Exception:
-        properties = []
-        p = PropertyValue()
-        properties.append(p)
-        model.storeToURL(path, tuple(properties))
+        model.storeToURL(path, ())
     return None
 
 
 def start_libreoffice():
     # Start libreoffice in headless mode
     os.system(
-        '/usr/bin/libreoffice --headless --nologo --nofirststartwizard --accept="socket,host=0.0.0.0,port=8100;urp" &'
+        '/usr/bin/libreoffice --headless --nologo --accept="socket,host=0.0.0.0,port=8100;urp" &'
     )
 
 
 def get_model():
-    desktop = get_desktop()
+    desktop, _ = get_desktop()
     # create blank spreadsheet
     model = desktop.loadComponentFromURL("private:factory/scalc", "_blank", 0, ())
     return model
 
 
 def open_file(path):
-    desktop = get_desktop()
+    desktop, _ = get_desktop()
     path = uno.systemPathToFileUrl(path)
     props_dict = {
         "AsTemplate": False,
@@ -80,7 +77,7 @@ def open_file(path):
 
 
 def get_current_file():
-    desktop = get_desktop()
+    desktop, _ = get_desktop()
     model = desktop.getCurrentComponent()
     return model
 
@@ -105,7 +102,10 @@ def get_desktop():
 
     # get the central desktop object
     desktop = smgr.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
-    return desktop
+    dispatcher = smgr.createInstanceWithContext(
+        "com.sun.star.frame.DispatchHelper", ctx
+    )
+    return desktop, dispatcher
 
 
 if __name__ == "__main__":

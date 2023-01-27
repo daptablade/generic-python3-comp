@@ -67,6 +67,7 @@ def setup(
     store(model, file)
     # add filepath to the parameters
     parameters["ods_file"] = file
+    model.close(True)
 
     message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Setup completed."
     print(message)

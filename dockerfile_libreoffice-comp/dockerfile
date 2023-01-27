@@ -39,7 +39,7 @@ USER $USERNAME
 
 # ## for local testing accessing the spreadsheet gui
 # ## use `docker run -ti --rm -e DISPLAY=host.docker.internal:0.0 --name=libreoffice-comp libreoffice-comp` to access gui
-# CMD /usr/bin/libreoffice --calc --accept="socket,host=0.0.0.0,port=8100;urp;"
+# CMD /usr/bin/libreoffice --nologo --calc --accept="socket,host=0.0.0.0,port=8100;urp;"
 
 EXPOSE 50060
 EXPOSE 8100
