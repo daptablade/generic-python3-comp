@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 import uno
-from libreoffice import store, open_file
+from libreoffice import store, get_current_file
 
 
 def compute(
@@ -55,7 +55,7 @@ def compute(
     run_folder = Path(parameters["outputs_folder_path"])
 
     # open saved spreadsheet
-    model = open_file(path=parameters["ods_file"])
+    model = get_current_file()
 
     # add data and plot
     if not inputs["design"]:

@@ -61,7 +61,23 @@ def get_model():
 
 def open_file(path):
     desktop = get_desktop()
-    # load spreadsheet
+    path = uno.systemPathToFileUrl(path)
+    props_dict = {
+        "AsTemplate": False,
+        "MacroExecutionMode": 4,  # ALWAYS_EXECUTE_NO_WARN
+    }
+    properties = []
+    for key, val in props_dict.items():
+        p = PropertyValue()
+        p.Name = key
+        p.Value = val
+        properties.append(p)
+    model = desktop.loadComponentFromURL(path, "_default", 0, tuple(properties))
+    return model
+
+
+def get_current_file():
+    desktop = get_desktop()
     model = desktop.getCurrentComponent()
     return model
 
