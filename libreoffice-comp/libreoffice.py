@@ -48,11 +48,14 @@ def store(model, file=None):
     return None
 
 
-def get_model():
+def start_libreoffice():
     # Start libreoffice in headless mode
     os.system(
         '/usr/bin/libreoffice --headless --nologo --nofirststartwizard --accept="socket,host=0.0.0.0,port=8100;urp" &'
     )
+
+
+def get_model():
     desktop = get_desktop()
     # create blank spreadsheet
     model = desktop.loadComponentFromURL("private:factory/scalc", "_blank", 0, ())

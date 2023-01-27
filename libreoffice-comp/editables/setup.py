@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from libreoffice import get_model, store
+from libreoffice import get_model, store, start_libreoffice
 from com.sun.star.awt.FontWeight import BOLD, NORMAL
 
 
@@ -52,6 +52,7 @@ def setup(
     run_folder = Path(parameters["outputs_folder_path"])
 
     # start libreoffice and get a blank spreadsheet
+    start_libreoffice()
     model = get_model()
 
     # add data titles
