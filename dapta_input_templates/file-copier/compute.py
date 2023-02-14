@@ -16,9 +16,7 @@ def compute(
 ) -> dict:
     """A user editable compute function.
 
-    Here the compute function evaluates the equation
-    f(x,y) = (x-3)^2 + xy + (y+4)^2 - 3.
-    with function minimum at: x = 20/3; y = -22/3
+    Here the compute function copies input files to the output folder.
 
     Parameters
     ----------
