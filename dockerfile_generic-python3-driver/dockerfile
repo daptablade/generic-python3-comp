@@ -25,7 +25,7 @@ RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out
 
 # driver specific
 RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/orchestrator.proto
-ENV ORCHESTRATOR_HOST="orchestrator:50051"
+ENV ORCHESTRATOR_HOST="controller:50051"
 
 # Create the non-root user
 ARG USERNAME=non-root
