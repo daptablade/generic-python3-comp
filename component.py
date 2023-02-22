@@ -110,6 +110,8 @@ def setup(
             )
             if "warning" in resp and resp["warning"]:
                 t += "\n" + resp["warning"]
+            if oom_check():
+                t += "\nError 137 - System out of memory."
         raise ValueError(t)
 
     # response dictionary
@@ -215,6 +217,8 @@ def compute(
             )
             if "warning" in resp and resp["warning"]:
                 t += "\n" + resp["warning"]
+            if oom_check():
+                t += "\nError 137 - System out of memory."
         raise ValueError(t)
 
     # basic checks
@@ -427,6 +431,25 @@ def get_connection_files(prefix, inputs, infolder):
                     inputs_folder_path=infolder,
                     subfolder="connections",
                 )
+
+
+def oom_check():
+
+    with open(
+        "/sys/fs/cgroup/memory/memory.max_usage_in_bytes", "r", encoding="utf-8"
+    ) as f:
+        mem_max = int(f.readline())
+
+    with open(
+        "/sys/fs/cgroup/memory/memory.limit_in_bytes", "r", encoding="utf-8"
+    ) as f:
+        mem_limit = int(f.readline())
+
+    min_margin = 10 * 1024**2  # 10Mb in bytes
+    if (mem_limit - mem_max) <= min_margin:
+        return True
+    else:
+        return False
 
 
 if __name__ == "__main__":
