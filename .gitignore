@@ -2,6 +2,7 @@ __*
 venv/
 *.env
 .*
+*.deb
 
 component_pb2*
 orchestrator_pb2*

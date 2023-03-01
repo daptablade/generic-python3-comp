@@ -1,0 +1,8 @@
+/opt/OpenVSP/python/utilities/.
+/opt/OpenVSP/python/degen_geom/.
+/opt/OpenVSP/python/openvsp/.
+/opt/OpenVSP/python/CHARM/.
+grpc-interceptor ~= 0.12.0
+grpcio-tools ~= 1.30
+python-dotenv==0.20.0
+requests
