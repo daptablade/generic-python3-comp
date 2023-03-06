@@ -1,6 +1,9 @@
 FROM python:3.8
 
 # install openvsp only
+RUN  apt-get update && apt-get install -y --no-install-recommends \
+        libcminpack-dev \
+    && rm -rf /var/lib/apt/lists/*
 ARG DEBIAN_FRONTEND=noninteractive
 WORKDIR /usr/local
 COPY generic-python3-comp/openvsp-comp/OpenVSP-3.31.1-Linux.deb /usr/local/OpenVSP.deb
@@ -31,9 +34,11 @@ RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out
 
 # setup openvsp executable symbolic links
 RUN python -m pip install -r requirements.txt
-ARG OpenVSP_PATH="$(python -c 'from distutils. sysconfig import get_python_lib; print(get_python_lib())')/openvsp"
+ARG OpenVSP_PATH="/usr/local/lib/python3.8/site-packages/openvsp"
 WORKDIR $OpenVSP_PATH
+RUN echo $PWD
 RUN ln -s /opt/OpenVSP/vspviewer && ln -s /opt/OpenVSP/vsploads && ln -s /opt/OpenVSP/vspaero
+RUN echo "$(ls -ltr)"
 WORKDIR /app/openvsp-comp
 
 # Create the non-root user

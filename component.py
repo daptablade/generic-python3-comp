@@ -37,6 +37,8 @@ PYTHON_LIB = os.getenv(
 sys.path.append(EDITABLES_PATH)
 sys.path.append(PYTHON_LIB)
 
+SETUP_IS_REQUIRED = True  # ensures basic setup on all replicas
+
 
 def setup(
     inputs: dict = None,
@@ -47,48 +49,7 @@ def setup(
 ):
 
     print("starting setup")
-
-    # setup empty outputs folders as required
-    fpath = "editables"  # folder with user rwx permission
-    params["inputs_folder_path"] = fpath
-    input_files = ["setup.py", "compute.py", "requirements.txt"]
-    dirs = []
-    user_input_files = []
-    output_directory = "outputs"  # default
-    p = fpath + "/" + output_directory
-    dirs.append(p)
-    params["outputs_folder_path"] = p
-
-    if "user_input_files" in params:
-        if not isinstance(params["user_input_files"], list):
-            raise TypeError(
-                "user_input_files should be list of dictionaries, each including a 'filename' key."
-            )
-        for i, file in enumerate(params["user_input_files"]):
-            filename = safename(file["filename"])
-            params["user_input_files"][i]["filename"] = filename
-            input_files.append(filename)
-
-    # create empty sub-directories for userfiles
-    if dirs:
-        make_dir(dirs)
-
-    # import latest input files from pv
-    if BE_API_HOST:
-        get_input_files(
-            ufpath=USER_FILES_PATH,
-            be_api=BE_API_HOST,
-            comp=COMP_NAME,
-            input_files=input_files,
-            inputs_folder_path=fpath,
-        )
-
-    if MYPYPI_HOST:
-        log_text = install("editables/requirements.txt", my_pypi=MYPYPI_HOST)
-        print(log_text)
-    else:
-        log_text = local_install("editables/requirements.txt")
-        print(log_text)
+    basic_setup(params)
 
     # load input files
     importlib.invalidate_caches()
@@ -101,12 +62,12 @@ def setup(
     except Exception:
         t = str(traceback.format_exc())
         # save setup output files to the user_storage in case of error
-        if BE_API_HOST and p:
+        if BE_API_HOST and params["outputs_folder_path"]:
             resp = post_ouput_files(
                 ufpath=USER_FILES_PATH,
                 be_api=BE_API_HOST,
                 comp=COMP_NAME,
-                outpath=str(p),
+                outpath=str(params["outputs_folder_path"]),
             )
             if "warning" in resp and resp["warning"]:
                 t += "\n" + resp["warning"]
@@ -153,12 +114,12 @@ def setup(
 
     # save setup output files to the user_storage
     try:
-        if BE_API_HOST and p:
+        if BE_API_HOST and params["outputs_folder_path"]:
             resp = post_ouput_files(
                 ufpath=USER_FILES_PATH,
                 be_api=BE_API_HOST,
                 comp=COMP_NAME,
-                outpath=str(p),
+                outpath=str(params["outputs_folder_path"]),
             )
             if "warning" in resp and resp["warning"]:
                 msg += resp["warning"]
@@ -176,6 +137,11 @@ def compute(
     partials: dict = None,
     options: dict = None,
 ):
+
+    if SETUP_IS_REQUIRED:
+        print("starting setup")
+        basic_setup(params)
+
     print("starting compute")
 
     if BE_API_HOST:
@@ -261,6 +227,55 @@ def compute(
 
 
 ### -------------------------------------------------- UTILS
+
+
+def basic_setup(params):
+
+    # setup empty outputs folders as required
+    fpath = "editables"  # folder with user rwx permission
+    params["inputs_folder_path"] = fpath
+    input_files = ["setup.py", "compute.py", "requirements.txt"]
+    dirs = []
+    output_directory = "outputs"  # default
+    p = fpath + "/" + output_directory
+    dirs.append(p)
+    params["outputs_folder_path"] = p
+
+    if "user_input_files" in params:
+        if not isinstance(params["user_input_files"], list):
+            raise TypeError(
+                "user_input_files should be list of dictionaries, each including a 'filename' key."
+            )
+        for i, file in enumerate(params["user_input_files"]):
+            filename = safename(file["filename"])
+            params["user_input_files"][i]["filename"] = filename
+            input_files.append(filename)
+
+    # create empty sub-directories for userfiles
+    if dirs:
+        make_dir(dirs)
+
+    # import latest input files from pv
+    if BE_API_HOST:
+        get_input_files(
+            ufpath=USER_FILES_PATH,
+            be_api=BE_API_HOST,
+            comp=COMP_NAME,
+            input_files=input_files,
+            inputs_folder_path=fpath,
+        )
+
+    if MYPYPI_HOST:
+        log_text = install("editables/requirements.txt", my_pypi=MYPYPI_HOST)
+        print(log_text)
+    else:
+        log_text = local_install("editables/requirements.txt")
+        print(log_text)
+
+    global SETUP_IS_REQUIRED
+    SETUP_IS_REQUIRED = False
+
+    return None
 
 
 def in_out_check(name, ref, new):

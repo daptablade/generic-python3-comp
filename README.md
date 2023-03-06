@@ -10,7 +10,7 @@ The components can be tested with sample data locally before running them in the
 
 ```
 # 1. build the component - replace [COMP] with chose component
-docker build -f dockerfile_[COMP]/dockerfile -t [COMP]:latest .
+docker build -f generic-python3-comp/dockerfile_[COMP]/dockerfile -t [COMP]:latest .
 
 # 2. run the container
 docker run --rm --name=[COMP] [COMP]
