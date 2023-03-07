@@ -1,16 +1,29 @@
 # GENERIC-PYTHON3-COMP
 
-Dapta sample components with a generic python 3 interface. 
-Each'dockerfile_...' folder contains the Dockerfile required to build a different derivative component.
+Source code for Dapta sample components with a generic python 3 interface. 
 
-## Testing a component locally
+## Testing components 
+
+The components can be tested with sample data locally before running them in the cloud. 
+There is no need for Docker in this case (unless you want to run inside the container, see below). 
+
+Watch this video to get you started: [Creating dapta components in 3 steps](https://youtu.be/hAKVhoDaiRE)
+
+## Access latest images
+
+You can access all docker container images via [dockerhub](https://hub.docker.com/repositories/ostodieck).
+
+## Building a component locally
 
 Requires [docker](https://www.docker.com/get-started/). 
-The components can be tested with sample data locally before running them in the cloud: 
+
+To test your code inside a local docker container: clone this repository, add your files and then build the container image as described below.
+
+Note: Each'dockerfile_...' folder contains the Dockerfile required to build a different derivative component.
 
 ```
 # 1. build the component - replace [COMP] with chose component
-docker build -f dockerfile_[COMP]/dockerfile -t [COMP]:latest .
+docker build -f generic-python3-comp/dockerfile_[COMP]/dockerfile -t [COMP]:latest .
 
 # 2. run the container
 docker run --rm --name=[COMP] [COMP]

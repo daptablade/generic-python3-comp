@@ -16,6 +16,7 @@ from concurrent import futures
 from signal import signal, SIGTERM
 import json
 import grpc
+import threading
 
 from google.protobuf.struct_pb2 import Struct
 from google.protobuf import json_format
@@ -26,6 +27,7 @@ import component_pb2_grpc
 from component import setup, compute, COMP_NAME
 
 PORT = 50060
+LOCK = threading.Lock()
 
 
 class ComponentService(component_pb2_grpc.ComponentServicer):
@@ -33,32 +35,35 @@ class ComponentService(component_pb2_grpc.ComponentServicer):
 
     # this method must have the same name as the RPC you define in your protobuf file
     def Setup(self, request, context):
-        print("received setup request")
-        try:
-            (msg, outputs) = setup(**json_format.MessageToDict(request.inputs))
-        except Exception as e:
-            print(e)
-            raise e
-        return ComponentResponse(outputmsg=msg, outputs=get_msg_body(outputs))
+        with LOCK:
+            print("received setup request")
+            try:
+                (msg, outputs) = setup(**json_format.MessageToDict(request.inputs))
+            except Exception as e:
+                print(e)
+                raise e
+            return ComponentResponse(outputmsg=msg, outputs=get_msg_body(outputs))
 
     def Compute(self, request, context):
-        print("received small compute request")
-        try:
-            (msg, outputs) = compute(**json_format.MessageToDict(request.inputs))
-            return ComponentResponse(outputmsg=msg, outputs=get_msg_body(outputs))
-        except Exception as e:
-            print(e)
-            raise e
+        with LOCK:
+            print("received small compute request")
+            try:
+                (msg, outputs) = compute(**json_format.MessageToDict(request.inputs))
+                return ComponentResponse(outputmsg=msg, outputs=get_msg_body(outputs))
+            except Exception as e:
+                print(e)
+                raise e
 
     def LargeCompute(self, request_iterator, context):
         """Method with stream of json strings for request and response."""
-        print("received large compute request")
-        try:
-            inputs = message_to_dict(request_iterator)
-            yield from dict_to_message(compute(**inputs))
-        except Exception as e:
-            print(e)
-            raise e
+        with LOCK:
+            print("received large compute request")
+            try:
+                inputs = message_to_dict(request_iterator)
+                yield from dict_to_message(compute(**inputs))
+            except Exception as e:
+                print(e)
+                raise e
 
 
 def get_msg_body(outputs):
