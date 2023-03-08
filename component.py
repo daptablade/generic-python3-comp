@@ -38,6 +38,7 @@ sys.path.append(EDITABLES_PATH)
 sys.path.append(PYTHON_LIB)
 
 SETUP_IS_REQUIRED = True  # ensures basic setup on all replicas
+HOSTNAME = os.getenv("HOSTNAME")
 
 
 def setup(
@@ -48,7 +49,12 @@ def setup(
     options: dict = None,
 ):
 
-    print("starting setup")
+    if HOSTNAME in params["setup_hosts"]:
+        print("already setup - return ...")
+        return ("", {"params": params})
+
+    print(f"starting setup on {HOSTNAME}")
+    params["setup_hosts"].append(HOSTNAME)
     basic_setup(params)
 
     # load input files
@@ -139,8 +145,7 @@ def compute(
 ):
 
     if SETUP_IS_REQUIRED:
-        print("starting setup")
-        basic_setup(params)
+        raise ValueError("Trying to run compute, but component has not been setup yet!")
 
     print("starting compute")
 
