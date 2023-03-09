@@ -52,7 +52,7 @@ def compute(
     inputs_folder = Path(parameters["inputs_folder_path"])
     run_folder = Path(parameters["outputs_folder_path"])
     for file in parameters["user_input_files"]:
-        src = inputs_folder / file
+        src = inputs_folder / file["filename"]
         shutil.copy(src, run_folder / (src.stem + "_out" + src.suffix))
 
     message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Copied files."

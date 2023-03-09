@@ -33,12 +33,13 @@ COMP_NAME = os.getenv("COMP_NAME", "component")
 PYTHON_LIB = os.getenv(
     "PYTHON_LIB", "/home/non-root/.local/lib/python3.8/site-packages"
 )
+HOSTNAME = os.getenv("HOSTNAME")
 
 sys.path.append(EDITABLES_PATH)
 sys.path.append(PYTHON_LIB)
 
-SETUP_IS_REQUIRED = True  # ensures basic setup on all replicas
-HOSTNAME = os.getenv("HOSTNAME")
+SETUP_IS_REQUIRED = True  # this is not re-initialised between runs
+LOADED_MODULES = {}
 
 
 def setup(
@@ -55,16 +56,19 @@ def setup(
 
     print(f"starting setup on {HOSTNAME}")
     params["setup_hosts"].append(HOSTNAME)
+    params["load_python_modules"] = ["setup.py", "compute.py"]
     basic_setup(params)
 
     # load input files
-    importlib.invalidate_caches()
-    user_setup = importlib.import_module("setup")
-    importlib.reload(user_setup)  # get user updates
+    load_modules = [f[:-3] for f in reversed(params.pop("load_python_modules"))]
+    for m in load_modules:
+        importlib.invalidate_caches()
+        LOADED_MODULES[m] = importlib.import_module(m)
+        importlib.reload(LOADED_MODULES[m])  # get user updates
 
     # execute setup
     try:
-        resp = user_setup.setup(inputs, outputs, parameters=params)
+        resp = LOADED_MODULES["setup"].setup(inputs, outputs, parameters=params)
     except Exception:
         t = str(traceback.format_exc())
         # save setup output files to the user_storage in case of error
@@ -153,11 +157,6 @@ def compute(
         # import connection input files from other components
         get_connection_files("files.", inputs, infolder=params["inputs_folder_path"])
 
-    # load input files
-    importlib.invalidate_caches()
-    user_compute = importlib.import_module("compute")
-    importlib.reload(user_compute)  # get user updates
-
     # generic compute setup
     run_folder = Path(params["outputs_folder_path"])
     if not run_folder.is_dir():
@@ -173,7 +172,7 @@ def compute(
 
     # execute compute
     try:
-        resp = user_compute.compute(
+        resp = LOADED_MODULES["compute"].compute(
             inputs, outputs, partials, options, parameters=params
         )
     except Exception:
@@ -255,6 +254,8 @@ def basic_setup(params):
             filename = safename(file["filename"])
             params["user_input_files"][i]["filename"] = filename
             input_files.append(filename)
+            if filename[-3:] == ".py":
+                params["load_python_modules"].append(filename)
 
     # create empty sub-directories for userfiles
     if dirs:
@@ -475,10 +476,10 @@ def oom_check():
 if __name__ == "__main__":
     inputs = {"design": {}, "implicit": {}, "setup": {}}
     outputs = {"design": {}, "implicit": {}, "setup": {}}
+    params = {"setup_hosts": [], "user_input_files": [{"filename": "temp.py"}]}
     (msg, rdict) = setup(
-        inputs=inputs, outputs=outputs, partials={}, params={}, options={}
+        inputs=inputs, outputs=outputs, partials={}, params=params, options={}
     )
-    rdict["params"]["user_input_files"] = []
     compute(
         inputs=inputs, outputs=outputs, partials={}, params=rdict["params"], options={}
     )
