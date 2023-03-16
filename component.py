@@ -347,7 +347,12 @@ def get_input_files(
 
         if rdict["response"]:
             # if file exists, then download it from server
-            params = {"file": file, "component_name": comp, "subfolder": subfolder}
+            params = {
+                "file": file,
+                "component_name": comp,
+                "subfolder": subfolder,
+                "run_name": run_name,
+            }
             res = requests.get(
                 f"http://{be_api}/be-api/v1/getfiles",
                 headers=headers,
