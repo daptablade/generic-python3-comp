@@ -78,6 +78,7 @@ def setup(
                 be_api=BE_API_HOST,
                 comp=COMP_NAME,
                 outpath=str(params["outputs_folder_path"]),
+                run_name=params["run_name"],
             )
             if "warning" in resp and resp["warning"]:
                 t += "\n" + resp["warning"]
@@ -114,7 +115,7 @@ def setup(
             if not key in params:  # avoid user overwriting setup data
                 params[key] = val
             else:
-                print(f"Warning - user tried to overwrite parameters data key {key}.")
+                print(f"Warning - any updates to parameters data key {key} is ignored.")
         resp.pop("parameters", None)
     rdict["params"] = params
 
@@ -130,6 +131,7 @@ def setup(
                 be_api=BE_API_HOST,
                 comp=COMP_NAME,
                 outpath=str(params["outputs_folder_path"]),
+                run_name=params["run_name"],
             )
             if "warning" in resp and resp["warning"]:
                 msg += resp["warning"]
@@ -155,7 +157,12 @@ def compute(
 
     if BE_API_HOST:
         # import connection input files from other components
-        get_connection_files("files.", inputs, infolder=params["inputs_folder_path"])
+        get_connection_files(
+            "files.",
+            inputs,
+            infolder=params["inputs_folder_path"],
+            run_name=params["run_name"],
+        )
 
     # generic compute setup
     run_folder = Path(params["outputs_folder_path"])
@@ -184,6 +191,7 @@ def compute(
                 be_api=BE_API_HOST,
                 comp=COMP_NAME,
                 outpath=str(run_folder),
+                run_name=params["run_name"],
             )
             if "warning" in resp and resp["warning"]:
                 t += "\n" + resp["warning"]
@@ -220,6 +228,7 @@ def compute(
                 be_api=BE_API_HOST,
                 comp=COMP_NAME,
                 outpath=str(run_folder),
+                run_name=params["run_name"],
             )
             if "warning" in resp and resp["warning"]:
                 msg += resp["warning"]
@@ -269,6 +278,7 @@ def basic_setup(params):
             comp=COMP_NAME,
             input_files=input_files,
             inputs_folder_path=fpath,
+            run_name=params["run_name"],
         )
 
     if MYPYPI_HOST:
@@ -307,7 +317,13 @@ def make_dir(dirs):
 
 
 def get_input_files(
-    ufpath, be_api, comp, input_files, inputs_folder_path, subfolder="inputs"
+    ufpath,
+    be_api,
+    comp,
+    input_files,
+    inputs_folder_path,
+    subfolder="inputs",
+    run_name="",
 ):
 
     headers = {"auth0token": ufpath.split("/")[-2]}
@@ -315,7 +331,12 @@ def get_input_files(
     for file in input_files:
 
         # check if input file exists
-        params = {"file_name": file, "component_name": comp, "subfolder": subfolder}
+        params = {
+            "file_name": file,
+            "component_name": comp,
+            "subfolder": subfolder,
+            "run_name": run_name,
+        }
         res = requests.get(
             f"http://{be_api}/be-api/v1/checkfilesexist",
             headers=headers,
@@ -326,7 +347,12 @@ def get_input_files(
 
         if rdict["response"]:
             # if file exists, then download it from server
-            params = {"file": file, "component_name": comp, "subfolder": subfolder}
+            params = {
+                "file": file,
+                "component_name": comp,
+                "subfolder": subfolder,
+                "run_name": run_name,
+            }
             res = requests.get(
                 f"http://{be_api}/be-api/v1/getfiles",
                 headers=headers,
@@ -383,7 +409,7 @@ def safename(file):
     return "".join(list(filter(lambda x: x in k, str(file))))
 
 
-def post_ouput_files(ufpath, be_api, comp, outpath):
+def post_ouput_files(ufpath, be_api, comp, outpath, run_name):
     headers = {"auth0token": ufpath.split("/")[-2]}
 
     # list all files in outpath
@@ -398,6 +424,7 @@ def post_ouput_files(ufpath, be_api, comp, outpath):
             "file_name": filepath.name,
             "component_name": comp,
             "subfolder": "outputs",
+            "run_name": run_name,
         }
         with open(filepath, "rb") as f:
             try:
@@ -424,7 +451,7 @@ def post_ouput_files(ufpath, be_api, comp, outpath):
     return {"warning": warning}
 
 
-def get_connection_files(prefix, inputs, infolder):
+def get_connection_files(prefix, inputs, infolder, run_name):
 
     for subtype in ["implicit", "setup"]:
         data = inputs[subtype]
@@ -451,6 +478,7 @@ def get_connection_files(prefix, inputs, infolder):
                     input_files=filenames,
                     inputs_folder_path=infolder,
                     subfolder="connections",
+                    run_name=run_name,
                 )
 
 
