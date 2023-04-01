@@ -326,7 +326,7 @@ def get_input_files(
     run_name="",
 ):
 
-    headers = {"auth0token": ufpath.split("/")[-2]}
+    headers = {"auth0token": ufpath.split("/")[-1]}
 
     for file in input_files:
 
@@ -410,7 +410,7 @@ def safename(file):
 
 
 def post_ouput_files(ufpath, be_api, comp, outpath, run_name):
-    headers = {"auth0token": ufpath.split("/")[-2]}
+    headers = {"auth0token": ufpath.split("/")[-1]}
 
     # list all files in outpath
     p = Path(outpath).glob("**/*")
