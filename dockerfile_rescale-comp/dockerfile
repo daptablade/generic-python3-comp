@@ -1,0 +1,32 @@
+FROM python:3.8
+
+RUN mkdir /app
+COPY protobufs /app/protobufs
+COPY generic-python3-comp/rescale-comp/editables/*.py /app/rescale-comp/editables/
+COPY generic-python3-comp/rescale-comp/*.py /app/rescale-comp/
+COPY generic-python3-comp/component.py /app/rescale-comp/
+COPY generic-python3-comp/component_api.py /app/rescale-comp/
+COPY generic-python3-comp/requirements.txt /app/rescale-comp/
+COPY generic-python3-comp/README.md /app/rescale-comp/
+COPY generic-python3-comp/VERSION /app/rescale-comp/
+COPY generic-python3-comp/LICENSE /app/rescale-comp/
+
+RUN chmod -R 755 /app 
+WORKDIR /app/rescale-comp
+
+RUN chmod -R 777 editables
+
+RUN python -m pip install --upgrade pip
+RUN python -m pip install -r requirements.txt
+RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/component.proto
+
+# Create the non-root user
+ARG USERNAME=non-root
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+USER $USERNAME
+
+EXPOSE 50060
+ENTRYPOINT [ "python", "-u", "component_api.py" ]
