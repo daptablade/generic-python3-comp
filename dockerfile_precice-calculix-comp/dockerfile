@@ -7,6 +7,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libspooles-dev \
         libyaml-cpp-dev \
         python3-pip \
+        # lsof \
+        # net-tools \
+        # iputils-ping \
+        # vim \
   && rm -rf /var/lib/apt/lists/*
 RUN wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_focal.deb
 RUN apt install -y --no-install-recommends ./libprecice2_2.5.0_focal.deb
@@ -24,6 +28,7 @@ WORKDIR /
 RUN mkdir /app
 COPY protobufs /app/protobufs
 COPY generic-python3-comp/editables /app/precice-calculix-comp/editables
+COPY generic-python3-comp/precice-comp/precice.py /app/precice-calculix-comp/
 COPY generic-python3-comp/calculix-fea-comp/calculix.py /app/precice-calculix-comp/
 COPY generic-python3-comp/component.py /app/precice-calculix-comp/
 COPY generic-python3-comp/component_api.py /app/precice-calculix-comp/
@@ -46,6 +51,5 @@ RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out
 ARG USERNAME=precice
 USER $USERNAME
 
-EXPOSE 1024
 EXPOSE 50060
 ENTRYPOINT [ "python", "-u", "component_api.py" ]
