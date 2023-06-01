@@ -40,9 +40,9 @@ def run_openfoam_preCICE(
     if not run_folder.is_dir():
         raise ValueError(f"run_folder is not valid folder path: {run_folder}")
 
-    cmd = "touch fluid-openfoam.foam "
-    cmd += f'&& {str(tools /"run-openfoam.sh")} "$@" '
-    cmd += f'&& source {str(tools /"openfoam-remove-empty-dirs.sh")} && openfoam_remove_empty_dirs'
+    cmd = "/bin/bash -c 'source /usr/lib/openfoam/openfoam2212/etc/bashrc && touch fluid-openfoam.foam "
+    cmd += f"&& {str(tools /'run-openfoam.sh')} \"$@\" "
+    cmd += f"&& source {str(tools /'openfoam-remove-empty-dirs.sh')} && openfoam_remove_empty_dirs' "
 
     if env is isinstance(env, dict):
         for k, v in env:
@@ -64,8 +64,8 @@ def run_openfoam_blockMesh(run_folder: Path, case: str = ""):
     if not run_folder.is_dir():
         raise ValueError(f"run_folder is not valid folder path: {run_folder}")
 
-    cmd = "blockMesh"
-    if isinstance(case, str):
+    cmd = "/bin/bash -c 'source /usr/lib/openfoam/openfoam2212/etc/bashrc && blockMesh'"
+    if case and isinstance(case, str):
         cmd += f" -case {case}"
 
     resp = subprocess.run(
