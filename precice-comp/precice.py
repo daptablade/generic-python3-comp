@@ -171,10 +171,12 @@ def run_background_script(run_folder, script, stop_on, tools_path):
             preexec_fn=os.setsid,
             stdout=PIPE,
         ) as proc:
+            log.write("Script execution started.\n")
             log.write(proc.stdout.read())
 
     while not stop_on.is_set():
-        # compute still running
+        with open(run_folder / f"{script}.log", "w") as log:
+            log.write("compute still running ....\n")
         sleep(1)
 
     os.killpg(
