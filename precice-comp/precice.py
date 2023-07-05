@@ -33,6 +33,10 @@ def run_ccx_preCICE(
                 "script": "copy_connection_file.bash",
                 "stop_on": event,
                 "tools_path": tools,
+                "args": [
+                    participant,
+                    '{"Calculix1":"beam-1", "Calculix2":"beam-2"}',
+                ],  # TODO
             },
         )
         t2 = threading.Thread(
@@ -43,6 +47,7 @@ def run_ccx_preCICE(
                 "script": "connection_file_delete.bash",
                 "stop_on": event,
                 "tools_path": tools,
+                "args": None,
             },
         )
         t1.start()
@@ -160,8 +165,13 @@ def get_config_file(infile: Path, participant=None):
     return FLAG_connection_file_monitoring
 
 
-def run_background_script(run_folder, script, stop_on, tools_path):
-    cmd = f".{tools_path / script}"
+def run_background_script(run_folder, script, stop_on, tools_path, args):
+    if not args:
+        cmd = f"/bin/bash {tools_path / script}"
+    else:
+        cmd = f"/bin/bash {tools_path / script}"
+        for arg in args:
+            cmd += f" {arg}"
     with open(run_folder / f"{script}.log", "w") as log:
         with subprocess.Popen(
             cmd,
