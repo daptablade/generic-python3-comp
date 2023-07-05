@@ -182,7 +182,7 @@ def run_background_script(run_folder, script, stop_on, tools_path, args):
             stdout=subprocess.PIPE,
         ) as proc:
             log.write("Script execution started.\n")
-            log.write(proc.stdout.read())
+            log.write(proc.stdout.read().decode("utf-8"))
 
     while not stop_on.is_set():
         with open(run_folder / f"{script}.log", "w") as log:
