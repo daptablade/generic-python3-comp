@@ -169,7 +169,7 @@ def run_background_script(run_folder, script, stop_on, tools_path):
             shell=True,
             env=os.environ,
             preexec_fn=os.setsid,
-            stdout=PIPE,
+            stdout=subprocess.PIPE,
         ) as proc:
             log.write("Script execution started.\n")
             log.write(proc.stdout.read())
