@@ -50,8 +50,18 @@ def run_ccx_preCICE(
                 "args": None,
             },
         )
-        t1.start()
-        t2.start()
+        t3 = threading.Thread(
+            daemon=True,
+            target=run_background_script,
+            kwargs={
+                "run_folder": run_folder,
+                "script": "monitor_connections.bash",
+                "stop_on": event,
+                "tools_path": tools,
+                "args": None,
+            },
+        )
+        t3.start()
 
     cmd = f"ccx_preCICE -i {infile.stem}"
     if isinstance(participant, str):
