@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libspooles-dev \
         libyaml-cpp-dev \
         python3-pip \
+        jq \
+        inotify-tools \
         # lsof \
         # net-tools \
         # iputils-ping \
@@ -29,6 +31,7 @@ RUN mkdir /app
 COPY protobufs /app/protobufs
 COPY generic-python3-comp/editables /app/precice-calculix-comp/editables
 COPY generic-python3-comp/precice-comp/precice.py /app/precice-calculix-comp/
+COPY generic-python3-comp/precice-comp/tools /app/precice-calculix-comp/tools
 COPY generic-python3-comp/calculix-fea-comp/calculix.py /app/precice-calculix-comp/
 COPY generic-python3-comp/component.py /app/precice-calculix-comp/
 COPY generic-python3-comp/component_api.py /app/precice-calculix-comp/
