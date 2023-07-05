@@ -62,6 +62,7 @@ def run_ccx_preCICE(
             },
         )
         t3.start()
+        sleep(1)
 
     cmd = f"ccx_preCICE -i {infile.stem}"
     if isinstance(participant, str):
