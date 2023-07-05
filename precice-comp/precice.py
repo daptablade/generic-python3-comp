@@ -182,12 +182,9 @@ def run_background_script(run_folder, script, stop_on, tools_path, args):
         cmd = f"/bin/bash {tools_path / script}"
         for arg in args:
             cmd += f" {arg}"
-    with open(run_folder / f"{script}.log", "w") as log:
-        with subprocess.Popen(
-            cmd, cwd=tools_path, shell=True, env=os.environ, preexec_fn=os.setsid, stdout= 
-        ) as proc:
-            log.write("Script execution started.\n")
-            log.write(proc.stdout.read().decode("utf-8"))
+    proc = subprocess.Popen(
+        cmd, cwd=tools_path, shell=True, env=os.environ, preexec_fn=os.setsid
+    )
 
     while not stop_on.is_set():
         with open(run_folder / f"{script}.log", "w") as log:
