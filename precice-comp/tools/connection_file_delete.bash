@@ -15,4 +15,4 @@ inotifywait -mr $monitoring_dir -e $monitor_event |
         rm -rf $tf
         echo "deleted connection file or folder:${tf}"
 
-    done
+    done > "../editables/outputs/connection_file_delete.log"

@@ -71,4 +71,4 @@ inotifywait -mr $monitoring_dir -e $monitor_event |
             # fi
         fi
 
-    done
+    done > "../editables/outputs/copy_connection_file.log"
