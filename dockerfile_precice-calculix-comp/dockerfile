@@ -29,6 +29,13 @@ RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/precice/precic
 RUN make clean
 RUN make
 RUN make install
+ENV PRECICE_PREFIX=/home/precice/software/precice
+ENV PATH=$PRECICE_PREFIX/bin:$PATH
+ENV LD_LIBRARY_PATH=$PRECICE_PREFIX/lib:$LD_LIBRARY_PATH
+ENV CPATH=$PRECICE_PREFIX/include:$CPATH
+# Enable detection with pkg-config and CMake
+ENV PKG_CONFIG_PATH=$PRECICE_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+ENV CMAKE_PREFIX_PATH=$PRECICE_PREFIX:$CMAKE_PREFIX_PATH
 
 # install adapter
 WORKDIR /home/precice
