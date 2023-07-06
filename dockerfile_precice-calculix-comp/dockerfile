@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY precice-2.5.0 /home/precice/precice-2.5.0
 RUN mkdir -p /home/precice/software/precice
 WORKDIR /home/precice/precice-2.5.0/build
+RUN cmake --build /home/precice/precice-2.5.0/build --target clean
 RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/precice/precice-2.5.0 -DPRECICE_RELEASE_WITH_DEBUG_LOG=ON ..
 RUN make clean
 RUN make
