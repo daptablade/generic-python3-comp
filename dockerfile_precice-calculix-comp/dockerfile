@@ -36,57 +36,58 @@ ENV CPATH=$PRECICE_PREFIX/include:$CPATH
 # Enable detection with pkg-config and CMake
 ENV PKG_CONFIG_PATH=$PRECICE_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
 ENV CMAKE_PREFIX_PATH=$PRECICE_PREFIX:$CMAKE_PREFIX_PATH
+RUN echo $PKG_CONFIG_PATH
 
 # install adapter
-WORKDIR /home/precice
-RUN wget http://www.dhondt.de/ccx_2.20.src.tar.bz2
-RUN tar xvjf ccx_2.20.src.tar.bz2  
-# The source code is now in the ~/CalculiX/ccx_2.20/src directory where the adapter is looking for it
-# RUN wget https://github.com/precice/calculix-adapter/releases/download/v2.20.0/calculix-precice2_2.20.0-1_amd64_focal.deb
-# RUN apt -y --no-install-recommends install ./calculix-precice2_2.20.0-1_amd64_focal.deb
-# install adapter from source too required
-WORKDIR /home/precice
-RUN wget https://github.com/precice/calculix-adapter/archive/refs/heads/master.tar.gz
-RUN tar -xzf master.tar.gz
-WORKDIR /home/precice/calculix-adapter-master
-RUN make clean
-RUN make
-WORKDIR /usr/local/bin
-RUN ln -s /home/precice/calculix-adapter-master/bin/ccx_preCICE ccx_preCICE
+# WORKDIR /home/precice
+# RUN wget http://www.dhondt.de/ccx_2.20.src.tar.bz2
+# RUN tar xvjf ccx_2.20.src.tar.bz2  
+# # The source code is now in the ~/CalculiX/ccx_2.20/src directory where the adapter is looking for it
+# # RUN wget https://github.com/precice/calculix-adapter/releases/download/v2.20.0/calculix-precice2_2.20.0-1_amd64_focal.deb
+# # RUN apt -y --no-install-recommends install ./calculix-precice2_2.20.0-1_amd64_focal.deb
+# # install adapter from source too required
+# WORKDIR /home/precice
+# RUN wget https://github.com/precice/calculix-adapter/archive/refs/heads/master.tar.gz
+# RUN tar -xzf master.tar.gz
+# WORKDIR /home/precice/calculix-adapter-master
+# RUN make clean
+# RUN make
+# WORKDIR /usr/local/bin
+# RUN ln -s /home/precice/calculix-adapter-master/bin/ccx_preCICE ccx_preCICE
 
-RUN chmod -R 777 /home/precice
+# RUN chmod -R 777 /home/precice
 
-# setup component folders
-WORKDIR /
-RUN mkdir /app
-COPY protobufs /app/protobufs
-COPY generic-python3-comp/editables /app/precice-calculix-comp/editables
-COPY generic-python3-comp/precice-comp/precice.py /app/precice-calculix-comp/
-COPY generic-python3-comp/precice-comp/bashrc.bash /app/precice-calculix-comp/
-COPY generic-python3-comp/precice-comp/tools /app/precice-calculix-comp/tools
-COPY generic-python3-comp/calculix-fea-comp/calculix.py /app/precice-calculix-comp/
-COPY generic-python3-comp/component.py /app/precice-calculix-comp/
-COPY generic-python3-comp/component_api.py /app/precice-calculix-comp/
-COPY generic-python3-comp/requirements.txt /app/precice-calculix-comp/
-COPY generic-python3-comp/README.md /app/precice-calculix-comp/
-COPY generic-python3-comp/VERSION /app/precice-calculix-comp/
-COPY generic-python3-comp/LICENSE /app/precice-calculix-comp/
+# # setup component folders
+# WORKDIR /
+# RUN mkdir /app
+# COPY protobufs /app/protobufs
+# COPY generic-python3-comp/editables /app/precice-calculix-comp/editables
+# COPY generic-python3-comp/precice-comp/precice.py /app/precice-calculix-comp/
+# COPY generic-python3-comp/precice-comp/bashrc.bash /app/precice-calculix-comp/
+# COPY generic-python3-comp/precice-comp/tools /app/precice-calculix-comp/tools
+# COPY generic-python3-comp/calculix-fea-comp/calculix.py /app/precice-calculix-comp/
+# COPY generic-python3-comp/component.py /app/precice-calculix-comp/
+# COPY generic-python3-comp/component_api.py /app/precice-calculix-comp/
+# COPY generic-python3-comp/requirements.txt /app/precice-calculix-comp/
+# COPY generic-python3-comp/README.md /app/precice-calculix-comp/
+# COPY generic-python3-comp/VERSION /app/precice-calculix-comp/
+# COPY generic-python3-comp/LICENSE /app/precice-calculix-comp/
 
-RUN chmod -R 755 /app
-WORKDIR /app/precice-calculix-comp
+# RUN chmod -R 755 /app
+# WORKDIR /app/precice-calculix-comp
 
-RUN chmod -R 777 editables
+# RUN chmod -R 777 editables
 
-RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN python -m pip install --upgrade pip
-RUN python -m pip install -r requirements.txt
-RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/component.proto
+# RUN ln -s /usr/bin/python3 /usr/bin/python
+# RUN python -m pip install --upgrade pip
+# RUN python -m pip install -r requirements.txt
+# RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/component.proto
 
-# set non-root user (already created in precice ci image)
-ARG USERNAME=precice
-USER $USERNAME
+# # set non-root user (already created in precice ci image)
+# ARG USERNAME=precice
+# USER $USERNAME
 
-ENTRYPOINT ["bashrc.bash"]
+# ENTRYPOINT ["bashrc.bash"]
 
-EXPOSE 50060
-CMD [ "python", "-u", "component_api.py" ]
+# EXPOSE 50060
+# CMD [ "python", "-u", "component_api.py" ]
