@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # RUN wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_focal.deb
 # RUN apt install -y --no-install-recommends ./libprecice2_2.5.0_focal.deb
 ## install from source with debug flag on
-COPY ../precice-2.5.0 /home/precice/precice-2.5.0
+COPY precice-2.5.0 /home/precice/precice-2.5.0
 RUN mkdir /home/precice/software/precice
 WORKDIR /home/precice/precice-2.5.0/build
 RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/precice/precice-2.5.0 -DPRECICE_RELEASE_WITH_DEBUG_LOG=ON ..
