@@ -44,7 +44,7 @@ RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out
 
 # set non-root user (already created in precice ci image)
 ARG USERNAME=precice
-USER $USERNAME
+USER precice
 
 # RUN wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_focal.deb
 # RUN apt install -y --no-install-recommends ./libprecice2_2.5.0_focal.deb
