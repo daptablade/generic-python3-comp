@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         net-tools \
         iputils-ping \
         vim \
+        netcat \
   && rm -rf /var/lib/apt/lists/*
 RUN wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_focal.deb
 RUN apt install -y --no-install-recommends ./libprecice2_2.5.0_focal.deb
