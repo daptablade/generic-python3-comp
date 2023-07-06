@@ -15,34 +15,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         vim \
         netcat \
   && rm -rf /var/lib/apt/lists/*
-# RUN wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_focal.deb
-# RUN apt install -y --no-install-recommends ./libprecice2_2.5.0_focal.deb
-## install from source with debug flag on
-COPY precice-2.5.0 /home/precice/precice-2.5.0
-RUN mkdir -p /home/precice/software/precice
-WORKDIR /home/precice/precice-2.5.0/build
-RUN rm -rf *
-RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/precice/precice-2.5.0 -DPRECICE_RELEASE_WITH_DEBUG_LOG=ON ..
-RUN make clean
-RUN make
-RUN make install
-
-# install adapter
-WORKDIR /home/precice
-RUN wget http://www.dhondt.de/ccx_2.20.src.tar.bz2
-RUN tar xvjf ccx_2.20.src.tar.bz2  
-# The source code is now in the ~/CalculiX/ccx_2.20/src directory where the adapter is looking for it
-# RUN wget https://github.com/precice/calculix-adapter/releases/download/v2.20.0/calculix-precice2_2.20.0-1_amd64_focal.deb
-# RUN apt -y --no-install-recommends install ./calculix-precice2_2.20.0-1_amd64_focal.deb
-# install adapter from source too required
-WORKDIR /home/precice
-RUN wget https://github.com/precice/calculix-adapter/archive/refs/heads/master.tar.gz
-RUN tar -xzf master.tar.gz
-WORKDIR /home/precice/calculix-adapter-master
-RUN make clean
-RUN make
-WORKDIR /usr/local/bin
-RUN ln -s /home/precice/calculix-adapter-master/bin/ccx_preCICE ccx_preCICE
 
 # setup component folders
 WORKDIR /
@@ -73,6 +45,35 @@ RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out
 # set non-root user (already created in precice ci image)
 ARG USERNAME=precice
 USER $USERNAME
+
+# RUN wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_focal.deb
+# RUN apt install -y --no-install-recommends ./libprecice2_2.5.0_focal.deb
+## install from source with debug flag on
+COPY precice-2.5.0 /home/precice/precice-2.5.0
+RUN mkdir -p /home/precice/software/precice
+WORKDIR /home/precice/precice-2.5.0/build
+RUN rm -rf *
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/precice/precice-2.5.0 -DPRECICE_RELEASE_WITH_DEBUG_LOG=ON ..
+RUN make clean
+RUN make
+RUN make install
+
+# install adapter
+WORKDIR /home/precice
+RUN wget http://www.dhondt.de/ccx_2.20.src.tar.bz2
+RUN tar xvjf ccx_2.20.src.tar.bz2  
+# The source code is now in the ~/CalculiX/ccx_2.20/src directory where the adapter is looking for it
+# RUN wget https://github.com/precice/calculix-adapter/releases/download/v2.20.0/calculix-precice2_2.20.0-1_amd64_focal.deb
+# RUN apt -y --no-install-recommends install ./calculix-precice2_2.20.0-1_amd64_focal.deb
+# install adapter from source too required
+WORKDIR /home/precice
+RUN wget https://github.com/precice/calculix-adapter/archive/refs/heads/master.tar.gz
+RUN tar -xzf master.tar.gz
+WORKDIR /home/precice/calculix-adapter-master
+RUN make clean
+RUN make
+WORKDIR /usr/local/bin
+RUN ln -s /home/precice/calculix-adapter-master/bin/ccx_preCICE ccx_preCICE
 
 ENTRYPOINT ["bashrc.bash"]
 
