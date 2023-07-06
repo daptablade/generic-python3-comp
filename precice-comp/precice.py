@@ -22,36 +22,36 @@ def run_ccx_preCICE(
     if not run_folder.is_dir():
         raise ValueError(f"run_folder is not valid folder path: {run_folder}")
 
-    FLAG_connection_file_monitoring = get_config_file(precice_config, participant)
-    if FLAG_connection_file_monitoring:
-        event = threading.Event()
-        t1 = threading.Thread(
-            daemon=True,
-            target=run_background_script,
-            kwargs={
-                "run_folder": run_folder,
-                "script": "copy_connection_file.bash",
-                "stop_on": event,
-                "tools_path": tools,
-                "args": [
-                    participant,
-                    '{"Calculix1":"beam-1", "Calculix2":"beam-2"}',
-                ],  # TODO
-            },
-        )
-        t2 = threading.Thread(
-            daemon=True,
-            target=run_background_script,
-            kwargs={
-                "run_folder": run_folder,
-                "script": "connection_file_delete.bash",
-                "stop_on": event,
-                "tools_path": tools,
-                "args": None,
-            },
-        )
-    else:
-        sleep(2)
+    # FLAG_connection_file_monitoring = get_config_file(precice_config, participant)
+    # if FLAG_connection_file_monitoring:
+    #     event = threading.Event()
+    #     t1 = threading.Thread(
+    #         daemon=True,
+    #         target=run_background_script,
+    #         kwargs={
+    #             "run_folder": run_folder,
+    #             "script": "copy_connection_file.bash",
+    #             "stop_on": event,
+    #             "tools_path": tools,
+    #             "args": [
+    #                 participant,
+    #                 '{"Calculix1":"beam-1", "Calculix2":"beam-2"}',
+    #             ],  # TODO
+    #         },
+    #     )
+    #     t2 = threading.Thread(
+    #         daemon=True,
+    #         target=run_background_script,
+    #         kwargs={
+    #             "run_folder": run_folder,
+    #             "script": "connection_file_delete.bash",
+    #             "stop_on": event,
+    #             "tools_path": tools,
+    #             "args": None,
+    #         },
+    #     )
+    # else:
+    #     sleep(2)
 
     cmd = f"ccx_preCICE -i {infile.stem}"
     if isinstance(participant, str):
@@ -71,10 +71,10 @@ def run_ccx_preCICE(
         env=os.environ,
     )
 
-    if FLAG_connection_file_monitoring:
-        event.set()  # stop deamon threads
-        t1.join()
-        t2.join()
+    # if FLAG_connection_file_monitoring:
+    #     event.set()  # stop deamon threads
+    #     t1.join()
+    #     t2.join()
 
     return {"stdout": resp.stdout.decode("ascii"), "returncode": resp.returncode}
 
