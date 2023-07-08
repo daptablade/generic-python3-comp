@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libyaml-cpp-dev \
         python3-pip \
         pkg-config \
+        jq \
+        inotify-tools \
         # lsof \
         # net-tools \
         # iputils-ping \

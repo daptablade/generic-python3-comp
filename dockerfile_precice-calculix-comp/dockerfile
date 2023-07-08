@@ -7,28 +7,50 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libspooles-dev \
         libyaml-cpp-dev \
         python3-pip \
-        # lsof \
-        # net-tools \
-        # iputils-ping \
-        # vim \
+        jq \
+        inotify-tools \
+        lsof \
+        net-tools \
+        iputils-ping \
+        vim \
+        netcat \
+        iptables \
   && rm -rf /var/lib/apt/lists/*
-RUN wget https://github.com/precice/precice/releases/download/v2.5.0/libprecice2_2.5.0_focal.deb
-RUN apt install -y --no-install-recommends ./libprecice2_2.5.0_focal.deb
 
-# install adapter
-RUN wget http://www.dhondt.de/ccx_2.20.src.tar.bz2
-RUN tar xvjf ccx_2.20.src.tar.bz2  
-# The source code is now in the ~/CalculiX/ccx_2.20/src directory where the adapter is looking for it
-RUN wget https://github.com/precice/calculix-adapter/releases/download/v2.20.0/calculix-precice2_2.20.0-1_amd64_focal.deb
-RUN apt -y --no-install-recommends install ./calculix-precice2_2.20.0-1_amd64_focal.deb
-
-
-# setup component folders
 WORKDIR /
 RUN mkdir /app
+## install from source with debug flag on
+COPY precice-2.5.0 /app/precice-2.5.0
+WORKDIR /app/precice-2.5.0/build
+RUN rm -rf *
+RUN cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DPRECICE_RELEASE_WITH_DEBUG_LOG=ON ..
+RUN make clean
+RUN make
+RUN make install
+RUN make test_install
+
+## install adapter
+WORKDIR /app
+RUN wget http://www.dhondt.de/ccx_2.20.src.tar.bz2
+RUN tar xvjf ccx_2.20.src.tar.bz2  
+# The source code is now in the /app/CalculiX/ccx_2.20/src directory where the adapter is looking for it (set in Makefile)
+# install adapter from source too required
+COPY calculix-adapter-master /app/calculix-adapter-master
+WORKDIR /app/calculix-adapter-master
+RUN make clean
+RUN make
+WORKDIR /usr/local/bin
+RUN ln -s /app/calculix-adapter-master/bin/ccx_preCICE ccx_preCICE
+
+### ask the dynamic linker to check /usr/local/lib too (required so that adapter can find precice)
+RUN echo "/usr/local/lib" >> /etc/ld.so.conf
+RUN ldconfig
+
+# setup component folders
 COPY protobufs /app/protobufs
 COPY generic-python3-comp/editables /app/precice-calculix-comp/editables
 COPY generic-python3-comp/precice-comp/precice.py /app/precice-calculix-comp/
+COPY generic-python3-comp/precice-comp/tools /app/precice-calculix-comp/tools
 COPY generic-python3-comp/calculix-fea-comp/calculix.py /app/precice-calculix-comp/
 COPY generic-python3-comp/component.py /app/precice-calculix-comp/
 COPY generic-python3-comp/component_api.py /app/precice-calculix-comp/
@@ -48,8 +70,8 @@ RUN python -m pip install -r requirements.txt
 RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/component.proto
 
 # set non-root user (already created in precice ci image)
-ARG USERNAME=precice
-USER $USERNAME
+# ARG USERNAME=precice
+# USER $USERNAME
 
 EXPOSE 50060
-ENTRYPOINT [ "python", "-u", "component_api.py" ]
+ENTRYPOINT ["python", "-u", "component_api.py" ]
