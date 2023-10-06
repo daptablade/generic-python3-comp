@@ -49,7 +49,6 @@ def setup(
     params: dict = None,
     options: dict = None,
 ):
-
     if HOSTNAME in params["setup_hosts"]:
         print("already setup - return ...")
         return ("", {"params": params})
@@ -82,8 +81,8 @@ def setup(
             )
             if "warning" in resp and resp["warning"]:
                 t += "\n" + resp["warning"]
-            if oom_check():
-                t += "\nError 137 - System out of memory."
+            # if oom_check():
+            #     t += "\nError 137 - System out of memory."
         raise ValueError(t)
 
     # response dictionary
@@ -149,7 +148,6 @@ def compute(
     partials: dict = None,
     options: dict = None,
 ):
-
     if SETUP_IS_REQUIRED:
         raise ValueError("Trying to run compute, but component has not been setup yet!")
 
@@ -195,8 +193,8 @@ def compute(
             )
             if "warning" in resp and resp["warning"]:
                 t += "\n" + resp["warning"]
-            if oom_check():
-                t += "\nError 137 - System out of memory."
+            # if oom_check():
+            #     t += "\nError 137 - System out of memory."
         raise ValueError(t)
 
     # basic checks
@@ -243,7 +241,6 @@ def compute(
 
 
 def basic_setup(params):
-
     # setup empty outputs folders as required
     fpath = "editables"  # folder with user rwx permission
     params["inputs_folder_path"] = fpath
@@ -325,11 +322,9 @@ def get_input_files(
     subfolder="inputs",
     run_name="",
 ):
-
     headers = {"auth0token": ufpath.split("/")[-1]}
 
     for file in input_files:
-
         # check if input file exists
         params = {
             "file_name": file,
@@ -404,7 +399,6 @@ def local_install(requirements_path):
 
 
 def safename(file):
-
     k = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz._-"
     return "".join(list(filter(lambda x: x in k, str(file))))
 
@@ -452,7 +446,6 @@ def post_ouput_files(ufpath, be_api, comp, outpath, run_name):
 
 
 def get_connection_files(prefix, inputs, infolder, run_name):
-
     for subtype in ["implicit", "setup"]:
         data = inputs[subtype]
         ks = [k for k in data.keys() if k.startswith(prefix)]
@@ -483,7 +476,6 @@ def get_connection_files(prefix, inputs, infolder, run_name):
 
 
 def oom_check():
-
     with open(
         "/sys/fs/cgroup/memory/memory.max_usage_in_bytes", "r", encoding="utf-8"
     ) as f:
