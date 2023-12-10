@@ -1,7 +1,7 @@
 FROM python:3.8
 
 RUN mkdir /app
-COPY protobufs /app/protobufs
+COPY generic-python3-comp/protobufs /app/protobufs
 COPY generic-python3-comp/rescale-comp/editables/*.py /app/rescale-comp/editables/
 COPY generic-python3-comp/rescale-comp/*.py /app/rescale-comp/
 COPY generic-python3-comp/component.py /app/rescale-comp/

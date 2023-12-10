@@ -1,0 +1,29 @@
+syntax = "proto3";
+import "component.proto";
+
+enum OrchCmdCategory {
+    STATUS = 0;
+    START = 1;
+    STOP = 2;
+    PAUSE = 3;
+}
+
+message OrchRequest {
+    string user_id = 1;
+    OrchCmdCategory category = 2;
+    string inputfile = 3;
+    string run_name= 4;
+}
+
+message OrchResponse {
+    int32 status = 1;
+    string outputmsg = 2;
+}
+
+service Orchestrator {
+    rpc Orchestrate (OrchRequest) returns (OrchResponse);
+    rpc CallCompute (ComponentRequest) returns (ComponentResponse);
+    rpc GetCompAttributes (ComponentRequest) returns (ComponentResponse);
+    rpc CallLargeCompute (stream ComponentLargeMessage) returns (stream ComponentLargeMessage);
+    rpc GetCompLargeAttributes (stream ComponentLargeMessage) returns (stream ComponentLargeMessage);
+}

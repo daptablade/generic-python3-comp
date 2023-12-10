@@ -9,7 +9,7 @@ RUN  rm -rf /var/lib/apt/lists/*
   
 ### install python API
 RUN mkdir /app
-COPY protobufs /app/protobufs
+COPY generic-python3-comp/protobufs /app/protobufs
 COPY generic-python3-comp/libreoffice-comp/editables/*.py /app/libreoffice-comp/editables/
 COPY generic-python3-comp/libreoffice-comp/libreoffice.py /app/libreoffice-comp/
 COPY generic-python3-comp/libreoffice-comp/,env /app/libreoffice-comp/.env

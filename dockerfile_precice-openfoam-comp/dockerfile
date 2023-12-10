@@ -24,7 +24,7 @@ RUN apt-get install -y openfoam2212-default
 # setup component folders
 WORKDIR /
 RUN mkdir /app
-COPY protobufs /app/protobufs
+COPY generic-python3-comp/protobufs /app/protobufs
 COPY generic-python3-comp/editables /app/precice-openfoam-comp/editables
 COPY generic-python3-comp/precice-comp/precice.py /app/precice-openfoam-comp/
 COPY generic-python3-comp/precice-comp/tools /app/precice-openfoam-comp/tools

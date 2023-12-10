@@ -24,7 +24,7 @@ RUN rm /usr/local/ccx_2.20.tar && rm -rf /usr/local/CalculiX
 # setup python API
 WORKDIR /
 RUN mkdir /app
-COPY protobufs /app/protobufs
+COPY generic-python3-comp/protobufs /app/protobufs
 COPY generic-python3-comp/editables/*.py /app/calculix-fea-comp/editables/
 COPY generic-python3-comp/calculix-fea-comp/calculix.py /app/calculix-fea-comp/
 COPY generic-python3-comp/component.py /app/calculix-fea-comp/

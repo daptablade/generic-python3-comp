@@ -14,7 +14,7 @@ RUN apt install /usr/local/OpenVSP.deb ; exit 0
 # setup python API
 WORKDIR /
 RUN mkdir /app
-COPY protobufs /app/protobufs
+COPY generic-python3-comp/protobufs /app/protobufs
 COPY generic-python3-comp/editables/*.py /app/openvsp-comp/editables/
 COPY generic-python3-comp/component.py /app/openvsp-comp/
 COPY generic-python3-comp/component_api.py /app/openvsp-comp/

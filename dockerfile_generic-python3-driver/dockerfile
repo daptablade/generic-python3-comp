@@ -1,7 +1,7 @@
 FROM python:3.8
 
 RUN mkdir /app
-COPY protobufs /app/protobufs
+COPY generic-python3-comp/protobufs /app/protobufs
 COPY generic-python3-comp/component.py /app/generic-python3-driver/
 COPY generic-python3-comp/component_api.py /app/generic-python3-driver/
 COPY generic-python3-comp/requirements.txt /app/generic-python3-driver/
