@@ -1,0 +1,69 @@
+FROM ubuntu:20.04
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    wget \
+    python3-pip \
+    nano \
+    software-properties-common \ 
+    gnupg2 \
+    cabextract
+RUN  rm -rf /var/lib/apt/lists/*
+  
+# Add 32-bit architecture
+RUN dpkg --add-architecture i386
+
+# Install Wine
+RUN mkdir -pm755 /etc/apt/keyrings
+RUN wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
+RUN wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/focal/winehq-focal.sources
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends winehq-stable
+
+# Turn off Fixme warnings
+ENV WINEDEBUG=fixme-all
+
+# Setup a Wine prefix
+ENV WINEPREFIX=/root/.net 
+ENV WINEARCH=win64
+RUN winecfg
+
+# # Install Winetricks
+# RUN wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks
+# RUN chmod +x winetricks
+# RUN cp winetricks /usr/local/bin
+
+# # Install .NET Framework 4.8
+# RUN wineboot -u && winetricks -q dotnet48
+
+### install python API
+RUN mkdir /app
+COPY generic-python3-comp/protobufs /app/protobufs
+COPY generic-python3-comp/wine-comp/helloworld.exe /app/wine-comp/helloworld.exe
+COPY generic-python3-comp/wine-comp/helloworld.py /app/wine-comp/
+COPY generic-python3-comp/wine-comp/.env /app/wine-comp/.env
+COPY generic-python3-comp/component.py /app/wine-comp/
+COPY generic-python3-comp/component_api.py /app/wine-comp/
+COPY generic-python3-comp/requirements.txt /app/wine-comp/
+COPY generic-python3-comp/README.md /app/wine-comp/
+COPY generic-python3-comp/VERSION /app/wine-comp/
+COPY generic-python3-comp/LICENSE /app/wine-comp/
+
+RUN chmod -R 755 /app 
+WORKDIR /app/wine-comp
+
+RUN chmod -R 777 editables
+
+RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install -r requirements.txt
+RUN python3 -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/component.proto
+
+# Create the non-root user
+ARG USERNAME=non-root
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+USER $USERNAME
+
+EXPOSE 50060
+ENTRYPOINT [ "python3", "-u", "component_api.py" ]
