@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 def execute_helloworld(run_folder: Path):
-    """Run helloworld windows executatble and save text output to file."""
+    """Run helloworld windows executable and save text output to file."""
 
     resp = subprocess.run(
         "wine /app/wine-comp/helloworld.exe > helloworld.out",

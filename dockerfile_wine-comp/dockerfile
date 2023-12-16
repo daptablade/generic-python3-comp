@@ -19,25 +19,11 @@ RUN wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/d
 RUN apt-get update
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install --install-recommends winehq-stable
 
-# Turn off Fixme warnings
-ENV WINEDEBUG=fixme-all
-
-# Setup a Wine prefix
-ENV WINEPREFIX=/root/.net 
-ENV WINEARCH=win64
-RUN winecfg
-
-# # Install Winetricks
-# RUN wget https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks
-# RUN chmod +x winetricks
-# RUN cp winetricks /usr/local/bin
-
-# # Install .NET Framework 4.8
-# RUN wineboot -u && winetricks -q dotnet48
-
 ### install python API
+WORKDIR /
 RUN mkdir /app
 COPY generic-python3-comp/protobufs /app/protobufs
+COPY generic-python3-comp/wine-comp/editables/*.py /app/wine-comp/editables/
 COPY generic-python3-comp/wine-comp/helloworld.exe /app/wine-comp/helloworld.exe
 COPY generic-python3-comp/wine-comp/helloworld.py /app/wine-comp/
 COPY generic-python3-comp/wine-comp/.env /app/wine-comp/.env
@@ -52,6 +38,9 @@ RUN chmod -R 755 /app
 WORKDIR /app/wine-comp
 
 RUN chmod -R 777 editables
+RUN mkdir configs
+RUN chmod -R 777 configs
+RUN chmod -R 777 helloworld.exe
 
 RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install -r requirements.txt
@@ -63,7 +52,18 @@ ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+
+RUN chown $USERNAME:$USER_GID configs    
+
 USER $USERNAME
+
+# Turn off Fixme warnings
+ENV WINEDEBUG=fixme-all
+# Setup a Wine prefix
+ENV WINEPREFIX=/app/wine-comp/configs
+ENV WINEARCH=win64
+# create config files as non-root user
+RUN winecfg
 
 EXPOSE 50060
 ENTRYPOINT [ "python3", "-u", "component_api.py" ]
