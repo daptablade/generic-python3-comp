@@ -1,0 +1,49 @@
+FROM python:3.12
+
+RUN  apt-get update && apt-get install -y --no-install-recommends \
+        wget \
+        unzip \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /app
+COPY generic-python3-comp/protobufs /app/protobufs
+COPY generic-python3-comp/feniax-comp/editables/* /app/feniax-comp/editables/
+COPY generic-python3-comp/component.py /app/feniax-comp/
+COPY generic-python3-comp/component_api.py /app/feniax-comp/
+COPY generic-python3-comp/requirements.txt /app/feniax-comp/
+COPY generic-python3-comp/README.md /app/feniax-comp/
+COPY generic-python3-comp/VERSION /app/feniax-comp/
+COPY generic-python3-comp/LICENSE /app/feniax-comp/
+
+RUN chmod -R 755 /app 
+WORKDIR /app/feniax-comp
+
+RUN chmod -R 777 editables
+
+RUN python -m pip install --upgrade pip
+RUN python -m pip install -r requirements.txt
+RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out=. ../protobufs/component.proto
+
+# install feniax package from Github
+WORKDIR /app/feniax-comp
+### get package source from github
+RUN wget https://github.com/ostodieck/FEM4INAS/archive/refs/heads/master.zip
+RUN unzip master.zip
+### install python package 
+WORKDIR /app/feniax-comp/FEM4INAS-master
+RUN python -m pip install -e .[all]
+# RUN tests and save output to file
+RUN pytest > pytest.out
+WORKDIR /app/feniax-comp
+RUN rm master.zip
+
+# Create the non-root user
+ARG USERNAME=non-root
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+USER $USERNAME
+
+EXPOSE 50060
+ENTRYPOINT [ "python", "-u", "component_api.py" ]
