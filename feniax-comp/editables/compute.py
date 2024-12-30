@@ -1,6 +1,9 @@
 import os
 from datetime import datetime
 from pathlib import Path
+import glob
+import zipfile
+
 import plotly.express as px
 import pyNastran.op4.op4 as op4
 import matplotlib.pyplot as plt
@@ -72,25 +75,37 @@ def compute(
     print("Starting user function evaluation.")
 
     run_folder = Path(parameters["outputs_folder_path"])
+    cwd = os.getcwd()
     os.chdir(run_folder)
 
-    REMOVE_RESULTS = False
-    if os.getcwd().split("/")[-1] != "results":
-        if not os.path.isdir("./figs"):
-            os.mkdir("./figs")
-        if REMOVE_RESULTS:
-            if os.path.isdir("./results"):
-                shutil.rmtree("./results")
-        if not os.path.isdir("./results"):
-            print("***** creating results folder ******")
-            os.mkdir("./results")
+    # delete previous results
+    output_zip = run_folder / "output_files.zip"
+    if output_zip.is_file():
+        shutil.rmtree(output_zip)
 
+    # create results folders
+    os.mkdir("./figs")
+    os.mkdir("./results")
     os.chdir("./results")
 
     u_sp, u_spl = load_NASTRAN_results()
 
     generate_data()
     postprocess(u_sp, u_spl)
+
+    os.chdir(cwd)
+
+    # zip all data in outputs folder to be able to recover it with structure
+    result_files = [
+        Path(f) for f in glob.glob("**/*.*", recursive=True, root_dir=run_folder)
+    ]
+    with zipfile.ZipFile(output_zip, mode="w") as archive:
+        for file in result_files:
+            if not (run_folder / file).is_file():
+                raise FileNotFoundError(f"Cannot find output file {file}")
+            archive.write(run_folder / file, arcname=file)
+    shutil.rmtree(run_folder / "results")
+    shutil.rmtree(run_folder / "figs")
 
     message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Completed compute."
     print(message)
