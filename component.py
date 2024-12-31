@@ -40,6 +40,7 @@ sys.path.append(PYTHON_LIB)
 
 SETUP_IS_REQUIRED = True  # this is not re-initialised between runs
 LOADED_MODULES = {}
+CWD = os.getcwd()  # to avoid errors due to user scripts that change cwd
 
 
 def setup(
@@ -69,6 +70,7 @@ def setup(
     try:
         resp = LOADED_MODULES["setup"].setup(inputs, outputs, parameters=params)
     except Exception:
+        os.chdir(CWD)
         t = str(traceback.format_exc())
         # save setup output files to the user_storage in case of error
         if BE_API_HOST and params["outputs_folder_path"]:
@@ -181,6 +183,7 @@ def compute(
             inputs, outputs, partials, options, parameters=params
         )
     except Exception:
+        os.chdir(CWD)
         t = str(traceback.format_exc())
         # save output files to the user_storage in case of error
         if BE_API_HOST and run_folder:

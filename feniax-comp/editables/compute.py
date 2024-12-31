@@ -90,8 +90,21 @@ def compute(
 
     u_sp, u_spl = load_NASTRAN_results()
 
-    generate_data()
-    postprocess(u_sp, u_spl)
+    number_of_modes_inputs = [
+        key for key in inputs["design"] if key.startswith("number_of_modes")
+    ]
+    if number_of_modes_inputs:
+        for case in number_of_modes_inputs:
+            # rotate a fibre direction in the orientations parameter
+            tree = case.split(".")
+            case_name = tree[1]
+            parameters["number_of_modes"][case_name] = inputs["design"][case]
+
+    number_of_modes = parameters["number_of_modes"]
+    print(f"Input mode cases are: {str(number_of_modes)}")
+
+    generate_data(number_of_modes)
+    postprocess(u_sp, u_spl, sorted(number_of_modes.values()))
 
     os.chdir(cwd)
 
@@ -380,10 +393,10 @@ def plot_spWingsection(r0, r, rn, rnl):
 
 
 @fig_background
-def fn_spPloterror(error):
+def fn_spPloterror(error, num_modes):
 
     loads = [200, 250, 300, 400, 480, 530]
-    num_modes = [5, 15, 30, 50, 100]
+    # num_modes = [5, 15, 30, 50, 100]
     e250 = jnp.array([error[f"M{i}_L1"] for i in range(1, 6)])
     e400 = jnp.array([error[f"M{i}_L3"] for i in range(1, 6)])
     e530 = jnp.array([error[f"M{i}_L5"] for i in range(1, 6)])
@@ -483,20 +496,20 @@ def plot_spAD(rn, r0):
     return fig
 
 
-def generate_data():
+def generate_data(number_of_modes):
 
-    number_modes = {"SP1": 5, "SP2": 15, "SP3": 30, "SP4": 50, "SP5": 100}
+    # number_of_modes = {"SP1": 5, "SP2": 15, "SP3": 30, "SP4": 50, "SP5": 100}
 
-    for name in ["SP1", "SP2", "SP3", "SP4", "SP5"]:
+    for name in number_of_modes.keys():
         inp, _ = get_inputs()
-        inp.fem.num_modes = number_modes[name]
+        inp.fem.num_modes = int(number_of_modes[name])
         inp.driver.sol_path = Path(f"./{name}")
         run(inp, label=name)
 
     save_times()
 
 
-def postprocess(u_sp, u_spl):
+def postprocess(u_sp, u_spl, num_modes):
     t1 = time.time()
 
     # NOTE: correct config matrix names - default doesn't work
@@ -511,6 +524,7 @@ def postprocess(u_sp, u_spl):
     t2 = time.time()
     print(f"Time for config: {t2-t1}")
 
+    # plot the wing deflections overlay
     t1 = time.time()
     sol_sp = [solution.IntrinsicReader(f"./SP{i}") for i in range(1, 6)]
     r_sp0, r_sp, r_spn, r_spnl = fn_spWingsection(sol_sp, config, u_sp, u_spl)
@@ -521,11 +535,12 @@ def postprocess(u_sp, u_spl):
     print(figname)
     print(f"Time for figure: {t2-t1}")
 
+    # plot the deflection error convergence with number of modes
     # # config = configuration.Config.from_file("SP1/config.yaml")
     # # sol_sp = [solution.IntrinsicReader(f"./SP{i}") for i in range(1, 6)]
     t1 = time.time()
     sp_error = fn_spError(sol_sp, config, u_sp, print_info=True)
-    fig, figname = fig_out("SPstatic_3D")(fn_spPloterror)(sp_error)
+    fig, figname = fig_out("SPstatic_3D")(fn_spPloterror)(sp_error, num_modes)
     t2 = time.time()
     print(figname)
     print(f"Time for figure: {t2-t1}")

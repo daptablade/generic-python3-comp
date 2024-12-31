@@ -46,10 +46,14 @@ def setup(
     """
 
     # initalise setup_data keys
-    response = {}
+
+    number_of_modes = [
+        key for key in inputs["design"] if key.startswith("number_of_modes")
+    ]
+    for case in number_of_modes:
+        # set to int
+        inputs["design"][case] = int(inputs["design"][case])
 
     message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Setup completed."
-    print(message)
-    response["message"] = message
 
-    return response
+    return {"message": message, "inputs": inputs}
