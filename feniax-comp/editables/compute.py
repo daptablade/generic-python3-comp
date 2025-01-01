@@ -104,7 +104,8 @@ def compute(
     print(f"Input mode cases are: {str(number_of_modes)}")
 
     generate_data(number_of_modes)
-    postprocess(u_sp, u_spl, sorted(number_of_modes.values()))
+    deflection_output = postprocess(u_sp, u_spl, sorted(number_of_modes.values()))
+    outputs["design"]["deflection_output"] = deflection_output
 
     os.chdir(cwd)
 
@@ -123,7 +124,7 @@ def compute(
     message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Completed compute."
     print(message)
 
-    return {"message": message}
+    return {"message": message, "outputs": outputs}
 
 
 def load_NASTRAN_results():
@@ -333,7 +334,7 @@ def plot_spWingsection(r0, r, rn, rnl):
     # colors=["darkgrey", "darkgreen",
     #         "blue", "magenta", "orange", "black"]
     # dash = ['dash', 'dot', 'dashdot']
-    modes = [5, 15, 30, 50, 100]
+    # modes = [5, 15, 30, 50, 100]
     for li in range(6):
         if li == 0:
             fig = uplotly.lines2d(
@@ -544,6 +545,10 @@ def postprocess(u_sp, u_spl, num_modes):
     t2 = time.time()
     print(figname)
     print(f"Time for figure: {t2-t1}")
+
+    deflection_output = (r_sp[-1][:, 2] - r_sp0[:, 2]).tolist()
+
+    return deflection_output
 
 
 if __name__ == "__main__":
