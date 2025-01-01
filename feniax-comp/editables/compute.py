@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 import glob
 import zipfile
+from contextlib import redirect_stdout
 
 import plotly.express as px
 import pyNastran.op4.op4 as op4
@@ -72,57 +73,67 @@ def compute(
             A compute message that will appear in the Run log.
     """
 
-    print("Starting user function evaluation.")
-
     run_folder = Path(parameters["outputs_folder_path"])
-    cwd = os.getcwd()
-    os.chdir(run_folder)
 
-    # delete previous results
-    output_zip = run_folder / "output_files.zip"
-    if output_zip.is_file():
-        shutil.rmtree(output_zip)
+    with open(
+        run_folder / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}_feniax.log",
+        "w",
+        encoding="utf-8",
+    ) as f:
+        with redirect_stdout(f):
+            print("Starting user function evaluation.")
 
-    # create results folders
-    os.mkdir("./figs")
-    os.mkdir("./results")
-    os.chdir("./results")
+            cwd = os.getcwd()
+            os.chdir(run_folder)
 
-    u_sp, u_spl = load_NASTRAN_results()
+            # delete previous results
+            output_zip = run_folder / "output_files.zip"
+            if output_zip.is_file():
+                shutil.rmtree(output_zip)
 
-    number_of_modes_inputs = [
-        key for key in inputs["design"] if key.startswith("number_of_modes")
-    ]
-    if number_of_modes_inputs:
-        for case in number_of_modes_inputs:
-            # rotate a fibre direction in the orientations parameter
-            tree = case.split(".")
-            case_name = tree[1]
-            parameters["number_of_modes"][case_name] = inputs["design"][case]
+            # create results folders
+            os.mkdir("./figs")
+            os.mkdir("./results")
+            os.chdir("./results")
 
-    number_of_modes = parameters["number_of_modes"]
-    print(f"Input mode cases are: {str(number_of_modes)}")
+            u_sp, u_spl = load_NASTRAN_results()
 
-    generate_data(number_of_modes)
-    deflection_output = postprocess(u_sp, u_spl, sorted(number_of_modes.values()))
-    outputs["design"]["deflection_output"] = deflection_output
+            number_of_modes_inputs = [
+                key for key in inputs["design"] if key.startswith("number_of_modes")
+            ]
+            if number_of_modes_inputs:
+                for case in number_of_modes_inputs:
+                    # rotate a fibre direction in the orientations parameter
+                    tree = case.split(".")
+                    case_name = tree[1]
+                    parameters["number_of_modes"][case_name] = inputs["design"][case]
 
-    os.chdir(cwd)
+            number_of_modes = parameters["number_of_modes"]
+            print(f"Input mode cases are: {str(number_of_modes)}")
 
-    # zip all data in outputs folder to be able to recover it with structure
-    result_files = [
-        Path(f) for f in glob.glob("**/*.*", recursive=True, root_dir=run_folder)
-    ]
-    with zipfile.ZipFile(output_zip, mode="w") as archive:
-        for file in result_files:
-            if not (run_folder / file).is_file():
-                raise FileNotFoundError(f"Cannot find output file {file}")
-            archive.write(run_folder / file, arcname=file)
-    shutil.rmtree(run_folder / "results")
-    shutil.rmtree(run_folder / "figs")
+            generate_data(number_of_modes)
+            deflection_output = postprocess(
+                u_sp, u_spl, sorted(number_of_modes.values())
+            )
+            outputs["design"]["deflection_output"] = deflection_output
 
-    message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Completed compute."
-    print(message)
+            os.chdir(cwd)
+
+            # zip all data in outputs folder to be able to recover it with structure
+            result_files = [
+                Path(f)
+                for f in glob.glob("**/*.*", recursive=True, root_dir=run_folder)
+            ]
+            with zipfile.ZipFile(output_zip, mode="w") as archive:
+                for file in result_files:
+                    if not (run_folder / file).is_file():
+                        raise FileNotFoundError(f"Cannot find output file {file}")
+                    archive.write(run_folder / file, arcname=file)
+            shutil.rmtree(run_folder / "results")
+            shutil.rmtree(run_folder / "figs")
+
+            message = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}: Completed compute."
+            print(message)
 
     return {"message": message, "outputs": outputs}
 
