@@ -27,7 +27,7 @@ RUN python -m grpc_tools.protoc -I ../protobufs --python_out=. --grpc_python_out
 # install feniax package from Github
 WORKDIR /app/feniax-comp
 ### get package source from github
-RUN wget https://github.com/ostodieck/FEM4INAS/archive/refs/heads/master.zip
+RUN wget https://github.com/ostodieck/FENIAX/archive/refs/heads/master.zip
 RUN unzip master.zip
 ### install python package 
 WORKDIR /app/feniax-comp/FEM4INAS-master
